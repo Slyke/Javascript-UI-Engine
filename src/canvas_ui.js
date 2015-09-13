@@ -1,14 +1,14 @@
 /*
   By: Steven Lawler (Slyke)
   Email: steven.lawler777@gmail.com
-  Date: 21/09/2014
-  Version: 1
+  Creation Date: 21/09/2014
+  Version: 1.1a
   Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
   Example Usage:
     //------ Code
       var canvasControl = new CanvasControl(); //Create the class
-      var c = document.getElementById("mapDraw"); //Get the canvas as an object.
+      var c = document.getElementById("canvasDraw"); //Get the canvas as an object.
       objCanvas=canvasControl.setupCanvas(c); //Setup the canvas for drawing.
       c.addEventListener('click', function(e) { //Add click event listener.
         canvasControl.mouseEventHandler(e, "Click");
@@ -117,8 +117,7 @@ var CanvasControl = function() {
     Style is another optional parameter that allows the fill color, the line thickness and the line color to be specified.
   // */
   this.drawSquare = function (x, y, w, h, renderType, context, style) {
-    context = (context === undefined || context == null ? 
-this.canvasContext : context);
+    context = (context === undefined || context == null ? this.canvasContext : context);
     x = (x === undefined || x == null || x == "" ? 0 : x);
     y = (y === undefined || y == null || y == "" ? 0 : y);
     w = (w === undefined || w == null || w == "" ? 0 : w);
@@ -225,7 +224,7 @@ this.canvasContext : context);
     The context is optional and is what it will be drawing to. If it's null, or not specified, it will use the one from the class.
     Style is another optional parameter that allows the line thickness and the line color to be specified.
   // */
-  this.drawLine = function (x1, y1, x2, y2, renderType, context, style) {
+  this.drawLine = function (x1, y1, x2, y2, context, style) {
     context = (context === undefined || context == null ? this.canvasContext : context);
     x1 = (x1 === undefined || x1 == null || x1 == "" ? 0 : x1);
     y1 = (y1 === undefined || y1 == null || y1 == "" ? 0 : y1);
@@ -246,8 +245,46 @@ this.canvasContext : context);
     context.stroke();
     context.closePath();
     context.fillStyle=originalFillStyle;
+    if (debugConsole & 32) {console.log("drawLine(x1, y1, x2, y2, context, style): ", x1, y1, x2, y2, context, style);}
+  };
+  
+  
+  /*
+    drawPolygon() will draw a polygon from a list.
+    polygonPoints is an array of 2 points, X and Y in that order. For example: [[25, 30], [12, 50], [12, 65], ... [X, Y]]
+    The render type is a canvas context function that specifies if the square is filled, or just the border is drawn.
+    The context is optional and is what it will be drawing to. If it's null, or not specified, it will use the one from the class.
+    Style is another optional parameter that allows the line thickness and the line color to be specified.
+  // */
+  this.drawPolygon = function (polygonPoints, renderType, context, style) {
+    context = (context === undefined || context == null ? this.canvasContext : context);
+    x1 = (x1 === undefined || x1 == null || x1 == "" ? 0 : x1);
+    y1 = (y1 === undefined || y1 == null || y1 == "" ? 0 : y1);
+    x2 = (x2 === undefined || x2 == null || x2 == "" ? 0 : x2);
+    y2 = (y2 === undefined || y2 == null || y2 == "" ? 0 : y2);
+   originalFillStyle = context.fillStyle;
+    if (style!==undefined && style!=null) {
+      style.fillStyle = (style.fillStyle === undefined ? "000000" : style.fillStyle);
+      style.strokeStyle = (style.strokeStyle === undefined ? "000000" : style.strokeStyle);
+      style.lineWidth = (style.lineWidth === undefined ? "1" : style.lineWidth);
+    }
+    renderType = (renderType === undefined || renderType == null ? function(){ context.stroke(); } : renderType);
+    if (style!==undefined && style!=null) {
+      context.fillStyle=(style.fillStyle===undefined || style.fillStyle==null ? context.fillStyle : style.fillStyle);
+      context.strokeStyle=(style.strokeStyle===undefined || style.strokeStyle==null ? context.strokeStyle : style.strokeStyle);
+      context.lineWidth=(style.lineWidth===undefined || style.lineWidth==null ? context.lineWidth : style.lineWidth);
+    }
+    
+    context.beginPath();
+    context.moveTo(polygonPoints[0][0], polygonPoints[0][1]);
+    for (var i = 1; i < polygonPoints; i++) {
+      context.lineTo(polygonPoints[i][0], polygonPoints[i][0]);
+    }
+    context.closePath();
+    context.fillStyle=originalFillStyle;
     if (debugConsole & 32) {console.log("drawLine(x1, y1, x2, y2, renderType, context, style): ", x1, y1, x2, y2, renderType, context, style);}
   };
+  
   
     /*
       drawImage() will draw an image to the canvas. The image drawn can be an image, canvas, or video.
