@@ -2,7 +2,7 @@
   By: Steven Lawler (Slyke)
   Email: steven.lawler777@gmail.com
   Creation Date: 21/09/2014
-  Version: 1
+  Version: 1.2a
   Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
   Example Usage:
