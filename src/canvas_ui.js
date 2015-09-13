@@ -2,7 +2,7 @@
   By: Steven Lawler (Slyke)
   Email: steven.lawler777@gmail.com
   Creation Date: 21/09/2014
-  Version: 1.1a
+  Version: 1
   Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
   Example Usage:
@@ -61,16 +61,20 @@
       THE SOFTWARE.
     
   */ 
-  
-  
+
 var CanvasControl = function() {
+
   defaultBackgroundObject= {
     "backgroundColor":"#FFFFFF"
   };
+  
+  debugConsole=511; //Setting to 2048 turns on all debug messages for all functions. 511 for all but mouse events.
+  
   canvasContext=null;
   canvasObject=null;
   canvasObjects=[];
-  debugConsole=511; //Setting to 2048 turns on all debug messages for all functions. 511 for all but mouse events.
+  
+  Math.TAU = (2 * Math.PI); //Add in Tau compatibility
   
   /*
     setupCanvas() sets up the canvas area for drawing.
@@ -183,9 +187,9 @@ var CanvasControl = function() {
     };
     
   /*
-    drawArc() will draw an arc to the canvas. 2 * PI will draw a full circle.
+    drawArc() will draw an arc to the canvas. Tau (2 * PI) will draw a full circle.
     You can optionally pass in the x, y, s, r and f of the arc of you want. They default to 0.
-    x and y is the position of the centre point of the arc. s and f are the starting and finishing angle of the arc (0 and 2*PI is a full circle).
+    x and y is the position of the centre point of the arc. s and f are the starting and finishing angle of the arc (0 and Tau is a full circle).
     The render type is a canvas context function that specifies if the square is filled, or just the border is drawn.
     The context is optional and is what it will be drawing to. If it's null, or not specified, it will use the one from the class.
     Style is another optional parameter that allows the fill color, the line thickness and the line color to be specified.
@@ -252,16 +256,18 @@ var CanvasControl = function() {
   /*
     drawPolygon() will draw a polygon from a list.
     polygonPoints is an array of 2 points, X and Y in that order. For example: [[25, 30], [12, 50], [12, 65], ... [X, Y]]
+    autoArrange will order the polygon list so that it is a single point. It calculates this using the Graham Scan algorithm.
     The render type is a canvas context function that specifies if the square is filled, or just the border is drawn.
     The context is optional and is what it will be drawing to. If it's null, or not specified, it will use the one from the class.
     Style is another optional parameter that allows the line thickness and the line color to be specified.
   // */
-  this.drawPolygon = function (polygonPoints, renderType, context, style) {
+  this.drawPolygon = function (polygonPoints, autoArrange, renderType, context, style) {
     context = (context === undefined || context == null ? this.canvasContext : context);
     x1 = (x1 === undefined || x1 == null || x1 == "" ? 0 : x1);
     y1 = (y1 === undefined || y1 == null || y1 == "" ? 0 : y1);
     x2 = (x2 === undefined || x2 == null || x2 == "" ? 0 : x2);
     y2 = (y2 === undefined || y2 == null || y2 == "" ? 0 : y2);
+    autoArrange = (autoArrange === undefined || autoArrange == null || autoArrange == "" ? true : autoArrange);
    originalFillStyle = context.fillStyle;
     if (style!==undefined && style!=null) {
       style.fillStyle = (style.fillStyle === undefined ? "000000" : style.fillStyle);
@@ -273,6 +279,10 @@ var CanvasControl = function() {
       context.fillStyle=(style.fillStyle===undefined || style.fillStyle==null ? context.fillStyle : style.fillStyle);
       context.strokeStyle=(style.strokeStyle===undefined || style.strokeStyle==null ? context.strokeStyle : style.strokeStyle);
       context.lineWidth=(style.lineWidth===undefined || style.lineWidth==null ? context.lineWidth : style.lineWidth);
+    }
+    
+    if (autoArrange) {
+      polygonPoints = arrangePolygons(polygonPoints);
     }
     
     context.beginPath();
@@ -434,6 +444,21 @@ var CanvasControl = function() {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
+          } else if (objectList[objectIndex].shape=="polygon") { 
+            // This is based off the algorithm and code from here: http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+            var isInside = false;
+            for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+              var xi = vs[i][0];
+              var yi = vs[i][1];
+              var xj = vs[j][0];
+              var yj = vs[j][1];
+              
+              var intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+              if (intersect) isInside = !isInside;
+            }
+            if (isInside) {
+              clickedObjects.push(objectList[objectIndex]);
+            }
           }
         }
       }
@@ -441,4 +466,36 @@ var CanvasControl = function() {
       if (debugConsole & 1024) {console.log("checkMouseCollision(mouseX, mouseY, objectList): ", mouseX, mouseY, objectList);}
       return clickedObjects;
   };
+  
+  
+  /*
+    This is an internal function that arranges a polygon list so that it is a single shape, instead of being multiple polygons connected up by vertices.
+    It calculates a list of coordinates by figuring out the centre of mass and using that as the central point.
+  
+    // Modified from: http://stackoverflow.com/questions/2855189/sort-latitude-and-longitude-coordinates-into-clockwise-ordered-quadrilateral
+  // */
+  var arrangePolygons = function (polygonPoints) {
+      polygonPoints = polygonPoints.slice(0); // Copy the array, since sort() modifies it
+      var avg_points = function(pts) {
+          var x = 0;
+          var y = 0;
+          for(var i = 0; i < pts.length; i++) {
+              x += pts[i][0];
+              y += pts[i][1];
+          }
+          return [x / pts.length, y / pts.length];
+      }
+      var center = avg_points(polygonPoints);
+
+      // Calculate the angle between each point and the centre point, and sort by those angles
+      for(var i = 0; i < polygonPoints.length; i++) {
+          polygonPoints[i][2] = Math.atan2(polygonPoints[i][0] - center[0], polygonPoints[i][1] - center[1]);
+      }
+
+      polygonPoints = polygonPoints.sort(function(p1, p2) {
+          return p1[2] - p2[2];
+      });
+      return polygonPoints;
+  };
+  
 }
