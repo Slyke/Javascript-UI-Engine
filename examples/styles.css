@@ -1,0 +1,20 @@
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+canvas {
+  border-style: solid;
+  border-width: 2px;
+}
+
+.canvasContainer {
+  position:absolute;
+  width: 50%;
+  height: 50%;
+  margin: auto;
+  position: absolute;
+  top: 10%;
+  left: 0;
+  right: 0;
+}

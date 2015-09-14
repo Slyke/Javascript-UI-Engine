@@ -9,7 +9,7 @@
     //------ Code
       var canvasControl = new CanvasControl(); //Create the class
       var c = document.getElementById("canvasDraw"); //Get the canvas as an object.
-      objCanvas=canvasControl.setupCanvas(c); //Setup the canvas for drawing.
+      objCanvas = canvasControl.setupCanvas(c); //Setup the canvas for drawing.
       c.addEventListener('click', function(e) { //Add click event listener.
         canvasControl.mouseEventHandler(e, "Click");
       });
@@ -23,7 +23,7 @@
         "h":250,
         "shape":"rect", //This lets the click and mouse move handler know what type of object it is.
         "render":function(self) {
-          canvasControl.drawSquare(self.x, self.y, self.w, self.h);
+          canvasControl.drawRect(self.x, self.y, self.w, self.h);
         },
         "clickEvent":function(x, y, self) {
           console.log(x, y, self, "click");
@@ -68,11 +68,13 @@ var CanvasControl = function() {
     "backgroundColor":"#FFFFFF"
   };
   
-  debugConsole=511; //Setting to 2048 turns on all debug messages for all functions. 511 for all but mouse events.
+  var debugConsole      = 1023; //Setting to 4096 turns on all debug messages for all functions. 1023 for all but mouse events.
+  this.defaultColor     = "#000000";
+  this.defaultLineWidth = "1";
   
-  canvasContext=null;
-  canvasObject=null;
-  canvasObjects=[];
+  this.canvasContext = null;
+  this.canvasObject = null;
+  this.canvasObjects = [];
   
   Math.TAU = (2 * Math.PI); //Add in Tau compatibility
   
@@ -86,11 +88,15 @@ var CanvasControl = function() {
   this.setupCanvas = function(objCanvas, objectList) {
     objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
     this.canvasObject = objCanvas;
-    objectList=[];
+    objectList = [];
     objectList.push();
     this.canvasObjects = objectList;
     this.canvasContext = objCanvas.getContext("2d");
-    if (debugConsole & 1) {console.log("setupCanvas(objCanvas, objectList): ", objCanvas, objectList);}
+    if (debugConsole & 1) {
+      console.log("[1]: Debug Mode is set to: ", debugConsole); 
+      console.log("[1]: setupCanvas(objCanvas, objectList): ", objCanvas, objectList);
+    }
+    
     return this.canvasContext;
   };
   
@@ -103,47 +109,49 @@ var CanvasControl = function() {
     objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
     this.clearCanvas();
     for (canvasObject in objectList) {
-      if (objectList[canvasObject].visible!==undefined && objectList[canvasObject].visible!=null) {
-        if (objectList[canvasObject].visible!=false) {
+      if (objectList[canvasObject].visible !== undefined && objectList[canvasObject].visible!=null) {
+        if (objectList[canvasObject].visible != false) {
           objectList[canvasObject].render(objectList[canvasObject]);
         }
       }
     }
-    if (debugConsole & 2) {console.log("renderObjects(objectList): ", objectList);}
+    if (debugConsole & 2) {console.log("[2]: renderObjects(objectList): ", objectList);}
     return true;
   };
   
   /*
-    drawSquare() will draw a square to the canvas.
+    drawRect() will draw a square to the canvas.
     You can optionally pass in the x, y, width, and height of the square of you want. They default to 0.
     The render type is a canvas context function that specifies if the square is filled, or just the border is drawn.
     The context is optional and is what it will be drawing to. If it's null, or not specified, it will use the one from the class.
     Style is another optional parameter that allows the fill color, the line thickness and the line color to be specified.
   // */
-  this.drawSquare = function (x, y, w, h, renderType, context, style) {
+  this.drawRect = function (x, y, w, h, renderType, context, style) {
     context = (context === undefined || context == null ? this.canvasContext : context);
     x = (x === undefined || x == null || x == "" ? 0 : x);
     y = (y === undefined || y == null || y == "" ? 0 : y);
     w = (w === undefined || w == null || w == "" ? 0 : w);
     h = (h === undefined || h == null || h == "" ? 0 : h);
     originalFillStyle = context.fillStyle;
-    if (style!==undefined && style!=null) {
-      style.fillStyle = (style.fillStyle === undefined ? "000000" : style.fillStyle);
-      style.strokeStyle = (style.strokeStyle === undefined ? "000000" : style.strokeStyle);
-      style.lineWidth = (style.lineWidth === undefined ? "1" : style.lineWidth);
+    originalStrokeStyle = context.strokeStyle;
+    if (style !== undefined && style != null) {
+      style.fillStyle = (style.fillStyle === undefined ? this.defaultColor : style.fillStyle);
+      style.strokeStyle = (style.strokeStyle === undefined ? this.defaultColor : style.strokeStyle);
+      style.lineWidth = (style.lineWidth === undefined ? this.defaultLineWidth : style.lineWidth);
     }
     renderType = (renderType === undefined || renderType == null ? function(){ context.stroke(); } : renderType);
-    if (style!==undefined && style!=null) {
-      context.fillStyle=(style.fillStyle===undefined || style.fillStyle==null ? context.fillStyle : style.fillStyle);
-      context.strokeStyle=(style.strokeStyle===undefined || style.strokeStyle==null ? context.strokeStyle : style.strokeStyle);
-      context.lineWidth=(style.lineWidth===undefined || style.lineWidth==null ? context.lineWidth : style.lineWidth);
+    if (style !== undefined && style != null) {
+      context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
+      context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
+      context.lineWidth = (style.lineWidth === undefined || style.lineWidth == null ? context.lineWidth : style.lineWidth);
     }
     context.beginPath();
     context.rect(x, y, w, h);
     renderType();
     context.closePath();
-    context.fillStyle=originalFillStyle;
-    if (debugConsole & 4) {console.log("drawSquare(x, y, w, h, renderType, context, style): ", x, y, w, h, renderType, context, style);}
+    context.fillStyle = originalFillStyle;
+    context.strokeStyle = originalStrokeStyle;
+    if (debugConsole & 4) {console.log("[4]: drawRect(x, y, w, h, renderType, context, style): ", x, y, w, h, renderType, context, style);}
   };
   
     /*
@@ -162,9 +170,10 @@ var CanvasControl = function() {
       self.w = (self.w === undefined || self.w == null || self.w == "" ? context.measureText(text).width : self.w);
       self.h = (self.h === undefined || self.h == null || self.h == "" ? context.measureText(text).height : self.h);
       originalFillStyle = context.fillStyle;
-      if (style!==undefined && style!=null) {
-        context.fillStyle=(style.fillStyle===undefined || style.fillStyle==null ? context.fillStyle : style.fillStyle);
-        context.strokeStyle=(style.strokeStyle===undefined || style.strokeStyle==null ? context.strokeStyle : style.strokeStyle);
+      originalStrokeStyle = context.strokeStyle;
+      if (style !== undefined && style != null) {
+        context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
+        context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
         style.textBaseline = (style.textBaseline === undefined ? "hanging" : style.textBaseline);
         style.font = (style.font === undefined ? "" : style.font);
         style.maxWidth = (style.maxWidth === undefined ? null : style.maxWidth);
@@ -172,9 +181,9 @@ var CanvasControl = function() {
         style={};
       }
       renderText = (renderText === undefined || renderText == null ? function(x, y, text, maxWidth){ context.fillText(text, x, y); } : renderText);
-      if (style!==undefined && style!=null) {
-        context.fillStyle=(style.fillStyle===undefined || style.fillStyle==null ? context.fillStyle : style.fillStyle);
-        context.strokeStyle=(style.strokeStyle===undefined || style.strokeStyle==null ? context.strokeStyle : style.strokeStyle);
+      if (style !== undefined && style != null) {
+        context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
+        context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
         context.textBaseline = (style.textBaseline === undefined ? context.textBaseline : style.textBaseline);
         context.font = (style.font === undefined ? context.font : style.font);
         style.maxWidth = (style.maxWidth === undefined ? context.maxWidth : style.maxWidth);
@@ -182,8 +191,9 @@ var CanvasControl = function() {
       context.beginPath();
       renderText(x, y, text, style.maxWidth);
       context.closePath();
-      context.fillStyle=originalFillStyle;
-      if (debugConsole & 8) {console.log("drawText(x, y, text, renderText, context, style): ", x, y, text, renderText, context, style);}
+      context.fillStyle = originalFillStyle;
+      context.strokeStyle = originalStrokeStyle;
+      if (debugConsole & 8) {console.log("[8]: drawText(x, y, text, renderText, context, style): ", x, y, text, renderText, context, style);}
     };
     
   /*
@@ -202,23 +212,25 @@ var CanvasControl = function() {
     r = (r === undefined || r == null || r == "" ? 0 : r);
     f = (f === undefined || f == null || f == "" ? 2 * Math.PI : f);
     originalFillStyle = context.fillStyle;
-    if (style!==undefined && style!=null) {
-      style.fillStyle = (style.fillStyle === undefined ? "000000" : style.fillStyle);
-      style.strokeStyle = (style.strokeStyle === undefined ? "000000" : style.strokeStyle);
-      style.lineWidth = (style.lineWidth === undefined ? "1" : style.lineWidth);
+    originalStrokeStyle = context.strokeStyle;
+    if (style !== undefined && style != null) {
+      style.fillStyle = (style.fillStyle === undefined ? this.defaultColor : style.fillStyle);
+      style.strokeStyle = (style.strokeStyle === undefined ? this.defaultColor : style.strokeStyle);
+      style.lineWidth = (style.lineWidth === undefined ? this.defaultLineWidth : style.lineWidth);
     }
     renderType = (renderType === undefined || renderType == null ? function(){ context.stroke(); } : renderType);
-    if (style!==undefined && style!=null) {
-      context.fillStyle=(style.fillStyle===undefined || style.fillStyle==null ? context.fillStyle : style.fillStyle);
-      context.strokeStyle=(style.strokeStyle===undefined || style.strokeStyle==null ? context.strokeStyle : style.strokeStyle);
-      context.lineWidth=(style.lineWidth===undefined || style.lineWidth==null ? context.lineWidth : style.lineWidth);
+    if (style !== undefined && style != null) {
+      context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
+      context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
+      context.lineWidth = (style.lineWidth === undefined || style.lineWidth == null ? context.lineWidth : style.lineWidth);
     }
     context.beginPath();
     context.arc(x, y, r, s, f);
     renderType();
     context.closePath();
-    context.fillStyle=originalFillStyle;
-    if (debugConsole & 16) {console.log("drawArc(x, y, r, s, f, renderType, context, style): ", x, y, r, s, f, renderType, context, style);}
+    context.fillStyle = originalFillStyle;
+    context.strokeStyle = originalStrokeStyle;
+    if (debugConsole & 16) {console.log("[16]: drawArc(x, y, r, s, f, renderType, context, style): ", x, y, r, s, f, renderType, context, style);}
   };
   
   /*
@@ -235,21 +247,23 @@ var CanvasControl = function() {
     x2 = (x2 === undefined || x2 == null || x2 == "" ? 0 : x2);
     y2 = (y2 === undefined || y2 == null || y2 == "" ? 0 : y2);
     originalFillStyle = context.fillStyle;
-    if (style!==undefined && style!=null) {
-      style.strokeStyle = (style.strokeStyle === undefined ? "000000" : style.strokeStyle);
-      style.lineWidth = (style.lineWidth === undefined ? "1" : style.lineWidth);
+    originalStrokeStyle = context.strokeStyle;
+    if (style !== undefined && style != null) {
+      style.strokeStyle = (style.strokeStyle === undefined ? this.defaultColor : style.strokeStyle);
+      style.lineWidth = (style.lineWidth === undefined ? this.defaultLineWidth : style.lineWidth);
     }
     if (style!==undefined && style!=null) {
-      context.strokeStyle=(style.strokeStyle===undefined || style.strokeStyle==null ? context.strokeStyle : style.strokeStyle);
-      context.lineWidth=(style.lineWidth===undefined || style.lineWidth==null ? context.lineWidth : style.lineWidth);
+      context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
+      context.lineWidth = (style.lineWidth === undefined || style.lineWidth == null ? context.lineWidth : style.lineWidth);
     }
     context.beginPath();
     context.moveTo(x1, y1);
     context.lineTo(x2, y2);
     context.stroke();
     context.closePath();
-    context.fillStyle=originalFillStyle;
-    if (debugConsole & 32) {console.log("drawLine(x1, y1, x2, y2, context, style): ", x1, y1, x2, y2, context, style);}
+    context.fillStyle = originalFillStyle;
+    context.strokeStyle = originalStrokeStyle;
+    if (debugConsole & 32) {console.log("[32]: drawLine(x1, y1, x2, y2, context, style): ", x1, y1, x2, y2, context, style);}
   };
   
   
@@ -268,17 +282,18 @@ var CanvasControl = function() {
     x2 = (x2 === undefined || x2 == null || x2 == "" ? 0 : x2);
     y2 = (y2 === undefined || y2 == null || y2 == "" ? 0 : y2);
     autoArrange = (autoArrange === undefined || autoArrange == null || autoArrange == "" ? true : autoArrange);
-   originalFillStyle = context.fillStyle;
-    if (style!==undefined && style!=null) {
-      style.fillStyle = (style.fillStyle === undefined ? "000000" : style.fillStyle);
-      style.strokeStyle = (style.strokeStyle === undefined ? "000000" : style.strokeStyle);
-      style.lineWidth = (style.lineWidth === undefined ? "1" : style.lineWidth);
+    originalFillStyle = context.fillStyle;
+    originalStrokeStyle = context.strokeStyle;
+    if (style !== undefined && style != null) {
+      style.fillStyle = (style.fillStyle === undefined ? this.defaultColor : style.fillStyle);
+      style.strokeStyle = (style.strokeStyle === undefined ? this.defaultColor : style.strokeStyle);
+      style.lineWidth = (style.lineWidth === undefined ? this.defaultLineWidth : style.lineWidth);
     }
     renderType = (renderType === undefined || renderType == null ? function(){ context.stroke(); } : renderType);
-    if (style!==undefined && style!=null) {
-      context.fillStyle=(style.fillStyle===undefined || style.fillStyle==null ? context.fillStyle : style.fillStyle);
-      context.strokeStyle=(style.strokeStyle===undefined || style.strokeStyle==null ? context.strokeStyle : style.strokeStyle);
-      context.lineWidth=(style.lineWidth===undefined || style.lineWidth==null ? context.lineWidth : style.lineWidth);
+    if (style !== undefined && style != null) {
+      context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
+      context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
+      context.lineWidth = (style.lineWidth === undefined || style.lineWidth == null ? context.lineWidth : style.lineWidth);
     }
     
     if (autoArrange) {
@@ -291,8 +306,9 @@ var CanvasControl = function() {
       context.lineTo(polygonPoints[i][0], polygonPoints[i][0]);
     }
     context.closePath();
-    context.fillStyle=originalFillStyle;
-    if (debugConsole & 32) {console.log("drawLine(x1, y1, x2, y2, renderType, context, style): ", x1, y1, x2, y2, renderType, context, style);}
+    context.fillStyle = originalFillStyle;
+    context.strokeStyle = originalStrokeStyle;
+    if (debugConsole & 64) {console.log("[64]: drawPolygon(polygonPoints, autoArrange, renderType, context, style): ", polygonPoints, autoArrange, renderType, context, style);}
   };
   
   
@@ -332,8 +348,8 @@ var CanvasControl = function() {
         }
         context.closePath();
       }
-      context.fillStyle=originalFillStyle;
-      if (debugConsole & 64) {console.log("drawImage(srcImage, x, y, w, h, sx, sy, sw, sh, context): ", srcImage, x, y, w, h, sx, sy, sw, sh, context);}
+      context.fillStyle = originalFillStyle;
+      if (debugConsole & 128) {console.log("[128]: drawImage(srcImage, x, y, w, h, sx, sy, sw, sh, context): ", srcImage, x, y, w, h, sx, sy, sw, sh, context);}
     };
     
   /*
@@ -349,10 +365,10 @@ var CanvasControl = function() {
     } else {
       backgroundColor = (backgroundColor === undefined || backgroundColor == null ? "#FFFFFF" : backgroundColor);
     }
-    this.drawSquare(0, 0, this.canvasObject.width, this.canvasObject.height, function(){ context.fill(); }, context, {"fillStyle":defaultBackgroundObject.backgroundColor});
+    this.drawRect(0, 0, this.canvasObject.width, this.canvasObject.height, function(){ context.fill(); }, context, {"fillStyle":defaultBackgroundObject.backgroundColor});
     context.fillStyle=originalFillStyle;
     console.log("Cleared Canvas: ", this.canvasObject.width, this.canvasObject.height);
-    if (debugConsole & 128) {console.log("clearCanvas(backgroundColor, context): ", backgroundColor, context);}
+    if (debugConsole & 256) {console.log("[256]: clearCanvas(backgroundColor, context): ", backgroundColor, context);}
   };
   
   /*
@@ -365,7 +381,7 @@ var CanvasControl = function() {
     objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
     this.clearCanvas(context);
     this.renderObjects(objectList);
-    if (debugConsole & 256) {console.log("refreshScreen(context, objectList): ", context, objectList);}
+    if (debugConsole & 512) {console.log("[512]: refreshScreen(context, objectList): ", context, objectList);}
   };
   
   /*
@@ -379,8 +395,8 @@ var CanvasControl = function() {
     triggedObjectList = this.checkMouseCollision(e.offsetX, e.offsetY);
     for (var triggeredObject in triggedObjectList) {
       if (triggedObjectList[triggeredObject]!=null) {
-        if (eventType=="Click") {
-          if (triggedObjectList[triggeredObject].clickEvent!==undefined && triggedObjectList[triggeredObject].clickEvent!=null) {
+        if (eventType == "Click") {
+          if (triggedObjectList[triggeredObject].clickEvent !== undefined && triggedObjectList[triggeredObject].clickEvent != null) {
             if (triggedObjectList[triggeredObject].enabled !== undefined && triggedObjectList[triggeredObject].enabled != null) {
               if (triggedObjectList[triggeredObject].enabled == true) {
                 triggedObjectList[triggeredObject].clickEvent(e.offsetX, e.offsetY, triggedObjectList[triggeredObject]);
@@ -389,8 +405,8 @@ var CanvasControl = function() {
               triggedObjectList[triggeredObject].clickEvent(e.offsetX, e.offsetY, triggedObjectList[triggeredObject]);
             }
           }
-        } else if (eventType=="Move") {
-          if (triggedObjectList[triggeredObject].moveEvent!==undefined && triggedObjectList[triggeredObject].moveEvent!=null) {
+        } else if (eventType == "Move") {
+          if (triggedObjectList[triggeredObject].moveEvent !== undefined && triggedObjectList[triggeredObject].moveEvent != null) {
             if (triggedObjectList[triggeredObject].enabled !== undefined && triggedObjectList[triggeredObject].enabled != null) {
               if (triggedObjectList[triggeredObject].enabled == true) {
                 triggedObjectList[triggeredObject].moveEvent(e.offsetX, e.offsetY, triggedObjectList[triggeredObject]);
@@ -402,7 +418,7 @@ var CanvasControl = function() {
         }
       }
     }
-    if (debugConsole & 512) {console.log("mouseEventHandler(e, eventType, objectList): ", e, eventType, objectList);}
+    if (debugConsole & 1024) {console.log("[1024]: mouseEventHandler(e, eventType, objectList): ", e, eventType, objectList);}
   };
   
   /*
@@ -415,31 +431,31 @@ var CanvasControl = function() {
     objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
     clickedObjects = [];
     for (var objectIndex in objectList) {
-      if (objectList[objectIndex]!=null && typeof objectList[objectIndex]!==undefined) {
-        if (objectList[objectIndex].shape!=null && typeof objectList[objectIndex].shape!==undefined) {
-          if (objectList[objectIndex].shape=="rect") {
-            if ((objectList[objectIndex].x!==undefined && objectList[objectIndex].x!=null) && (objectList[objectIndex].w!==undefined && objectList[objectIndex].w!=null) && (objectList[objectIndex].y!==undefined && objectList[objectIndex].y!=null) && (objectList[objectIndex].h!==undefined && objectList[objectIndex].h!=null) ) {
+      if (objectList[objectIndex] != null && typeof objectList[objectIndex] !== undefined) {
+        if (objectList[objectIndex].shape != null && typeof objectList[objectIndex].shape !== undefined) {
+          if (objectList[objectIndex].shape == "rect") {
+            if ((objectList[objectIndex].x!==undefined && objectList[objectIndex].x!=null) && (objectList[objectIndex].w !== undefined && objectList[objectIndex].w != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].h !== undefined && objectList[objectIndex].h != null) ) {
               if (objectList[objectIndex].x <= mouseX && (objectList[objectIndex].x+objectList[objectIndex].w) >= mouseX && objectList[objectIndex].y <= mouseY && (objectList[objectIndex].y+objectList[objectIndex].h) >= mouseY) {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
-          } else if (objectList[objectIndex].shape=="arc") { 
+          } else if (objectList[objectIndex].shape = ="arc") { 
             //Warning: This assume it's a full circle, not an arc.
-            if ((objectList[objectIndex].x!==undefined && objectList[objectIndex].x!=null) && (objectList[objectIndex].y!==undefined && objectList[objectIndex].y!=null) && (objectList[objectIndex].r!==undefined && objectList[objectIndex].r!=null)) {
-              if (Math.sqrt((mouseX-objectList[objectIndex].x)*(mouseX-objectList[objectIndex].x) + (mouseY-objectList[objectIndex].y)*(mouseY-objectList[objectIndex].y)) < objectList[objectIndex].r) {
+            if ((objectList[objectIndex].x !== undefined && objectList[objectIndex].x != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].r !== undefined && objectList[objectIndex].r != null)) {
+              if (Math.sqrt((mouseX-objectList[objectIndex].x) * (mouseX-objectList[objectIndex].x) + (mouseY-objectList[objectIndex].y) * (mouseY-objectList[objectIndex].y)) < objectList[objectIndex].r) {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
-          } else if (objectList[objectIndex].shape=="image") { 
+          } else if (objectList[objectIndex].shape == "image") { 
             //Warning: Image height and width must be set for this to work.
-            if ((objectList[objectIndex].x!==undefined && objectList[objectIndex].x!=null) && (objectList[objectIndex].w!==undefined && objectList[objectIndex].w!=null) && (objectList[objectIndex].y!==undefined && objectList[objectIndex].y!=null) && (objectList[objectIndex].h!==undefined && objectList[objectIndex].h!=null) ) {
+            if ((objectList[objectIndex].x !== undefined && objectList[objectIndex].x != null) && (objectList[objectIndex].w !== undefined && objectList[objectIndex].w != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].h !== undefined && objectList[objectIndex].h != null) ) {
               if (objectList[objectIndex].x <= mouseX && (objectList[objectIndex].x+objectList[objectIndex].w) >= mouseX && objectList[objectIndex].y <= mouseY && (objectList[objectIndex].y+objectList[objectIndex].h) >= mouseY) {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
-          } else if (objectList[objectIndex].shape=="text") { 
+          } else if (objectList[objectIndex].shape == "text") { 
             //Warning: This treats the text as a rectangle block. Doesn't work if width and height aren't set.
-            if ((objectList[objectIndex].x!==undefined && objectList[objectIndex].x!=null) && (objectList[objectIndex].w!==undefined && objectList[objectIndex].w!=null) && (objectList[objectIndex].y!==undefined && objectList[objectIndex].y!=null) && (objectList[objectIndex].h!==undefined && objectList[objectIndex].h!=null) ) {
+            if ((objectList[objectIndex].x !== undefined && objectList[objectIndex].x != null) && (objectList[objectIndex].w !== undefined && objectList[objectIndex].w != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].h !== undefined && objectList[objectIndex].h != null) ) {
               if (objectList[objectIndex].x <= mouseX && (objectList[objectIndex].x+objectList[objectIndex].w) >= mouseX && objectList[objectIndex].y <= mouseY && (objectList[objectIndex].y+objectList[objectIndex].h) >= mouseY) {
                 clickedObjects.push(objectList[objectIndex]);
               }
@@ -463,7 +479,7 @@ var CanvasControl = function() {
         }
       }
     }
-      if (debugConsole & 1024) {console.log("checkMouseCollision(mouseX, mouseY, objectList): ", mouseX, mouseY, objectList);}
+      if (debugConsole & 2048) {console.log("[2048]: checkMouseCollision(mouseX, mouseY, objectList): ", mouseX, mouseY, objectList);}
       return clickedObjects;
   };
   
