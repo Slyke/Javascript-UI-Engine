@@ -2,7 +2,7 @@
   By: Steven Lawler (Slyke)
   Email: steven.lawler777@gmail.com
   Creation Date: 21/09/2014
-  Version: 1.2a
+  Version: 1.3a
   Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
   Example Usage:
@@ -439,7 +439,7 @@ var CanvasControl = function() {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
-          } else if (objectList[objectIndex].shape = ="arc") { 
+          } else if (objectList[objectIndex].shape == "arc") { 
             //Warning: This assume it's a full circle, not an arc.
             if ((objectList[objectIndex].x !== undefined && objectList[objectIndex].x != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].r !== undefined && objectList[objectIndex].r != null)) {
               if (Math.sqrt((mouseX-objectList[objectIndex].x) * (mouseX-objectList[objectIndex].x) + (mouseY-objectList[objectIndex].y) * (mouseY-objectList[objectIndex].y)) < objectList[objectIndex].r) {
