@@ -2,7 +2,7 @@
   By: Steven Lawler (Slyke)
   Email: steven.lawler777@gmail.com
   Creation Date: 21/09/2014
-  Version: 1.3a
+  Version: 1.4a
   Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
   Example Usage:
@@ -36,7 +36,7 @@
       canvasControl.canvasObjects.push(newSquare); //Add object to object list
       canvasControl.refreshScreen(); //Redraw screen.
     //------ Code
-    
+
     License:
     The MIT License (MIT)
 
@@ -59,25 +59,25 @@
       LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
       OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
       THE SOFTWARE.
-    
-  */ 
+
+  */
 
 var CanvasControl = function() {
 
   defaultBackgroundObject= {
     "backgroundColor":"#FFFFFF"
   };
-  
+
   var debugConsole      = 1023; //Setting to 4096 turns on all debug messages for all functions. 1023 for all but mouse events.
   this.defaultColor     = "#000000";
   this.defaultLineWidth = "1";
-  
+
   this.canvasContext = null;
   this.canvasObject = null;
   this.canvasObjects = [];
-  
+
   Math.TAU = (2 * Math.PI); //Add in Tau compatibility
-  
+
   /*
     setupCanvas() sets up the canvas area for drawing.
     You must provide the canvas object from the DOM.
@@ -93,13 +93,13 @@ var CanvasControl = function() {
     this.canvasObjects = objectList;
     this.canvasContext = objCanvas.getContext("2d");
     if (debugConsole & 1) {
-      console.log("[1]: Debug Mode is set to: ", debugConsole); 
+      console.log("[1]: Debug Mode is set to: ", debugConsole);
       console.log("[1]: setupCanvas(objCanvas, objectList): ", objCanvas, objectList);
     }
-    
+
     return this.canvasContext;
   };
-  
+
   /*
     renderObjects() cycles through each object and runs its render function.
     You can optionally provide an object list, it will use the class's list if you don't
@@ -118,7 +118,7 @@ var CanvasControl = function() {
     if (debugConsole & 2) {console.log("[2]: renderObjects(objectList): ", objectList);}
     return true;
   };
-  
+
   /*
     drawRect() will draw a square to the canvas.
     You can optionally pass in the x, y, width, and height of the square of you want. They default to 0.
@@ -153,7 +153,7 @@ var CanvasControl = function() {
     context.strokeStyle = originalStrokeStyle;
     if (debugConsole & 4) {console.log("[4]: drawRect(x, y, w, h, renderType, context, style): ", x, y, w, h, renderType, context, style);}
   };
-  
+
     /*
       drawText() will write text to the canvas.
       You can optionally pass in the x and y of the text of you want. They default to 0.
@@ -195,7 +195,7 @@ var CanvasControl = function() {
       context.strokeStyle = originalStrokeStyle;
       if (debugConsole & 8) {console.log("[8]: drawText(x, y, text, renderText, context, style): ", x, y, text, renderText, context, style);}
     };
-    
+
   /*
     drawArc() will draw an arc to the canvas. Tau (2 * PI) will draw a full circle.
     You can optionally pass in the x, y, s, r and f of the arc of you want. They default to 0.
@@ -210,7 +210,7 @@ var CanvasControl = function() {
     y = (y === undefined || y == null || y == "" ? 0 : y);
     s = (s === undefined || s == null || s == "" ? 0 : s);
     r = (r === undefined || r == null || r == "" ? 0 : r);
-    f = (f === undefined || f == null || f == "" ? 2 * Math.PI : f);
+    f = (f === undefined || f == null || f == "" ? 2 * Math.TAU : f);
     originalFillStyle = context.fillStyle;
     originalStrokeStyle = context.strokeStyle;
     if (style !== undefined && style != null) {
@@ -232,7 +232,7 @@ var CanvasControl = function() {
     context.strokeStyle = originalStrokeStyle;
     if (debugConsole & 16) {console.log("[16]: drawArc(x, y, r, s, f, renderType, context, style): ", x, y, r, s, f, renderType, context, style);}
   };
-  
+
   /*
     drawLine() will draw a line between 2 points.
     You can optionally pass in the x1, y1, x2, y2. They default to 0.
@@ -265,8 +265,8 @@ var CanvasControl = function() {
     context.strokeStyle = originalStrokeStyle;
     if (debugConsole & 32) {console.log("[32]: drawLine(x1, y1, x2, y2, context, style): ", x1, y1, x2, y2, context, style);}
   };
-  
-  
+
+
   /*
     drawPolygon() will draw a polygon from a list.
     polygonPoints is an array of 2 points, X and Y in that order. For example: [[25, 30], [12, 50], [12, 65], ... [X, Y]]
@@ -295,11 +295,11 @@ var CanvasControl = function() {
       context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
       context.lineWidth = (style.lineWidth === undefined || style.lineWidth == null ? context.lineWidth : style.lineWidth);
     }
-    
+
     if (autoArrange) {
       polygonPoints = arrangePolygons(polygonPoints);
     }
-    
+
     context.beginPath();
     context.moveTo(polygonPoints[0][0], polygonPoints[0][1]);
     for (var i = 1; i < polygonPoints; i++) {
@@ -310,8 +310,8 @@ var CanvasControl = function() {
     context.strokeStyle = originalStrokeStyle;
     if (debugConsole & 64) {console.log("[64]: drawPolygon(polygonPoints, autoArrange, renderType, context, style): ", polygonPoints, autoArrange, renderType, context, style);}
   };
-  
-  
+
+
     /*
       drawImage() will draw an image to the canvas. The image drawn can be an image, canvas, or video.
       srcImage is the source of the image.
@@ -322,7 +322,7 @@ var CanvasControl = function() {
       The sw and sh parameters are for clipping the source image (the width and height that should be grabbed, from sx and sy).
       These can be used to scale the image.
       The context is optional and is what it will be drawing to. If it's null, or not specified, it will use the one from the class.
-      
+
       Note:
         If a width and height is not specified in the image object, then the mouse events will not fire.
     // */
@@ -351,26 +351,33 @@ var CanvasControl = function() {
       context.fillStyle = originalFillStyle;
       if (debugConsole & 128) {console.log("[128]: drawImage(srcImage, x, y, w, h, sx, sy, sw, sh, context): ", srcImage, x, y, w, h, sx, sy, sw, sh, context);}
     };
-    
+
   /*
     clearCanvas() will draw over the entire canvas with a specified color.
     If a background color is not supplied, it will use defaultBackgroundObject.backgroundColor. If this is also not specified, it defaults to #FFFFFF
     The context is optional and is what it will be drawing to. If it's null, or not specified, it will use the one from the class.
+    transparentBackground will use clearRect() instead of the drawRect() function, which will allow for canvases that use transparent backgrounds to still be transparent, instead of drawing a background color.
   // */
-  this.clearCanvas = function(backgroundColor, context) {
+  this.clearCanvas = function(backgroundColor, context, transparentBackground) {
     context = (context === undefined || context == null ? this.canvasContext : context);
+    transparentBackground = (transparentBackground === undefined || transparentBackground == null ? true : transparentBackground);
     originalFillStyle = context.fillStyle;
-    if (defaultBackgroundObject!==undefined && defaultBackgroundObject!=null) {
+    if (defaultBackgroundObject !== undefined && defaultBackgroundObject != null) {
       backgroundColor = (backgroundColor === undefined || backgroundColor == null ? defaultBackgroundObject.backgroundColor : backgroundColor);
     } else {
       backgroundColor = (backgroundColor === undefined || backgroundColor == null ? "#FFFFFF" : backgroundColor);
     }
-    this.drawRect(0, 0, this.canvasObject.width, this.canvasObject.height, function(){ context.fill(); }, context, {"fillStyle":defaultBackgroundObject.backgroundColor});
+    if (transparentBackground) {
+      context.clearRect(0, 0, this.canvasObject.width, this.canvasObject.height);
+    } else {
+      this.drawRect(0, 0, this.canvasObject.width, this.canvasObject.height, function(){ context.fill(); }, context, {"fillStyle":defaultBackgroundObject.backgroundColor});
+    }
+
     context.fillStyle=originalFillStyle;
     console.log("Cleared Canvas: ", this.canvasObject.width, this.canvasObject.height);
-    if (debugConsole & 256) {console.log("[256]: clearCanvas(backgroundColor, context): ", backgroundColor, context);}
+    if (debugConsole & 256) {console.log("[256]: clearCanvas(backgroundColor, context, transparentBackground): ", backgroundColor, context, transparentBackground);}
   };
-  
+
   /*
     refreshScreen() will clear the canvas using clearCanvas() and then redraw all objects. This is used as an update.
     You must call this function each time you add, remove to change an object if you want to see the changes.
@@ -383,7 +390,7 @@ var CanvasControl = function() {
     this.renderObjects(objectList);
     if (debugConsole & 512) {console.log("[512]: refreshScreen(context, objectList): ", context, objectList);}
   };
-  
+
   /*
     mouseEventHandler() will run checkMouseCollision() to determine which object the mouse is over, and then execute all objects in that list.
     This function should be called from the JavaScript event listeners.
@@ -420,7 +427,7 @@ var CanvasControl = function() {
     }
     if (debugConsole & 1024) {console.log("[1024]: mouseEventHandler(e, eventType, objectList): ", e, eventType, objectList);}
   };
-  
+
   /*
     checkMouseCollision() cycles through a list of objects and determines whether the mouseX and mouseY point is inside that object.
     This function currently doesn't support polygons. Only circles and squares.
@@ -439,28 +446,28 @@ var CanvasControl = function() {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
-          } else if (objectList[objectIndex].shape == "arc") { 
+          } else if (objectList[objectIndex].shape == "arc") {
             //Warning: This assume it's a full circle, not an arc.
             if ((objectList[objectIndex].x !== undefined && objectList[objectIndex].x != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].r !== undefined && objectList[objectIndex].r != null)) {
               if (Math.sqrt((mouseX-objectList[objectIndex].x) * (mouseX-objectList[objectIndex].x) + (mouseY-objectList[objectIndex].y) * (mouseY-objectList[objectIndex].y)) < objectList[objectIndex].r) {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
-          } else if (objectList[objectIndex].shape == "image") { 
+          } else if (objectList[objectIndex].shape == "image") {
             //Warning: Image height and width must be set for this to work.
             if ((objectList[objectIndex].x !== undefined && objectList[objectIndex].x != null) && (objectList[objectIndex].w !== undefined && objectList[objectIndex].w != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].h !== undefined && objectList[objectIndex].h != null) ) {
               if (objectList[objectIndex].x <= mouseX && (objectList[objectIndex].x+objectList[objectIndex].w) >= mouseX && objectList[objectIndex].y <= mouseY && (objectList[objectIndex].y+objectList[objectIndex].h) >= mouseY) {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
-          } else if (objectList[objectIndex].shape == "text") { 
+          } else if (objectList[objectIndex].shape == "text") {
             //Warning: This treats the text as a rectangle block. Doesn't work if width and height aren't set.
             if ((objectList[objectIndex].x !== undefined && objectList[objectIndex].x != null) && (objectList[objectIndex].w !== undefined && objectList[objectIndex].w != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].h !== undefined && objectList[objectIndex].h != null) ) {
               if (objectList[objectIndex].x <= mouseX && (objectList[objectIndex].x+objectList[objectIndex].w) >= mouseX && objectList[objectIndex].y <= mouseY && (objectList[objectIndex].y+objectList[objectIndex].h) >= mouseY) {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
-          } else if (objectList[objectIndex].shape=="polygon") { 
+          } else if (objectList[objectIndex].shape=="polygon") {
             // This is based off the algorithm and code from here: http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
             var isInside = false;
             for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
@@ -468,7 +475,7 @@ var CanvasControl = function() {
               var yi = vs[i][1];
               var xj = vs[j][0];
               var yj = vs[j][1];
-              
+
               var intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
               if (intersect) isInside = !isInside;
             }
@@ -482,12 +489,12 @@ var CanvasControl = function() {
       if (debugConsole & 2048) {console.log("[2048]: checkMouseCollision(mouseX, mouseY, objectList): ", mouseX, mouseY, objectList);}
       return clickedObjects;
   };
-  
-  
+
+
   /*
     This is an internal function that arranges a polygon list so that it is a single shape, instead of being multiple polygons connected up by vertices.
     It calculates a list of coordinates by figuring out the centre of mass and using that as the central point.
-  
+
     // Modified from: http://stackoverflow.com/questions/2855189/sort-latitude-and-longitude-coordinates-into-clockwise-ordered-quadrilateral
   // */
   var arrangePolygons = function (polygonPoints) {
@@ -513,5 +520,5 @@ var CanvasControl = function() {
       });
       return polygonPoints;
   };
-  
+
 }
