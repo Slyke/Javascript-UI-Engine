@@ -109,7 +109,7 @@ var CanvasControl = function() {
     objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
     this.clearCanvas();
     for (canvasObject in objectList) {
-      if (objectList[canvasObject].visible !== undefined && objectList[canvasObject].visible!=null) {
+      if (objectList[canvasObject].visible !== undefined && objectList[canvasObject].visible != null) {
         if (objectList[canvasObject].visible != false) {
           objectList[canvasObject].render(objectList[canvasObject]);
         }
@@ -178,7 +178,7 @@ var CanvasControl = function() {
         style.font = (style.font === undefined ? "" : style.font);
         style.maxWidth = (style.maxWidth === undefined ? null : style.maxWidth);
       } else {
-        style={};
+        style = {};
       }
       renderText = (renderText === undefined || renderText == null ? function(x, y, text, maxWidth){ context.fillText(text, x, y); } : renderText);
       if (style !== undefined && style != null) {
@@ -252,7 +252,7 @@ var CanvasControl = function() {
       style.strokeStyle = (style.strokeStyle === undefined ? this.defaultColor : style.strokeStyle);
       style.lineWidth = (style.lineWidth === undefined ? this.defaultLineWidth : style.lineWidth);
     }
-    if (style!==undefined && style!=null) {
+    if (style !== undefined && style != null) {
       context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
       context.lineWidth = (style.lineWidth === undefined || style.lineWidth == null ? context.lineWidth : style.lineWidth);
     }
@@ -373,7 +373,7 @@ var CanvasControl = function() {
       this.drawRect(0, 0, this.canvasObject.width, this.canvasObject.height, function(){ context.fill(); }, context, {"fillStyle":defaultBackgroundObject.backgroundColor});
     }
 
-    context.fillStyle=originalFillStyle;
+    context.fillStyle = originalFillStyle;
     console.log("Cleared Canvas: ", this.canvasObject.width, this.canvasObject.height);
     if (debugConsole & 256) {console.log("[256]: clearCanvas(backgroundColor, context, transparentBackground): ", backgroundColor, context, transparentBackground);}
   };
@@ -441,7 +441,7 @@ var CanvasControl = function() {
       if (objectList[objectIndex] != null && typeof objectList[objectIndex] !== undefined) {
         if (objectList[objectIndex].shape != null && typeof objectList[objectIndex].shape !== undefined) {
           if (objectList[objectIndex].shape == "rect") {
-            if ((objectList[objectIndex].x!==undefined && objectList[objectIndex].x!=null) && (objectList[objectIndex].w !== undefined && objectList[objectIndex].w != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].h !== undefined && objectList[objectIndex].h != null) ) {
+            if ((objectList[objectIndex].x !== undefined && objectList[objectIndex].x != null) && (objectList[objectIndex].w !== undefined && objectList[objectIndex].w != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].h !== undefined && objectList[objectIndex].h != null) ) {
               if (objectList[objectIndex].x <= mouseX && (objectList[objectIndex].x+objectList[objectIndex].w) >= mouseX && objectList[objectIndex].y <= mouseY && (objectList[objectIndex].y+objectList[objectIndex].h) >= mouseY) {
                 clickedObjects.push(objectList[objectIndex]);
               }
@@ -477,7 +477,7 @@ var CanvasControl = function() {
               var yj = vs[j][1];
 
               var intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-              if (intersect) isInside = !isInside;
+              if (intersect) { isInside = !isInside; }
             }
             if (isInside) {
               clickedObjects.push(objectList[objectIndex]);
