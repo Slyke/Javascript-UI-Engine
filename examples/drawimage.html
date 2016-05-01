@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Draw Image on Canvas</title>
+    <script src="../src/canvas_ui.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    
+    <script>
+      var objCanvas = null;
+      var canvasControl = null;
+      var imgObjBackground = {};
+      
+      function init() {
+        objCanvas = document.getElementById("canvasDraw");
+        canvasControl = new CanvasControl(); //Create the class
+        
+        objContext = canvasControl.setupCanvas(objCanvas);
+        
+        setupEventHandlers(objCanvas, canvasControl);
+        doExample(canvasControl);
+        
+        imgObjBackground = new Image;
+        imgObjBackground.onload = function() { 
+        // We need this because if the image loads after the canvas, then the canvas will never draw it.
+        // the onload() function is called automatically if the image that is specified in the src is loaded
+          findObjectByName("bgImage", canvasControl.canvasObjects).src.objImage = imgObjBackground;
+          // findObjectByName("bgImage", canvasControl.canvasObjects).w = imgObjBackground.width; //Uncomment these if you do not resize the image
+          // findObjectByName("bgImage", canvasControl.canvasObjects).h = imgObjBackground.height;
+          canvasControl.refreshScreen();
+        };
+        
+        canvasControl.refreshScreen();
+        
+        imgObjBackground.src = "testimage.png";
+        
+      }
+      
+      function findObjectByName(name, objectList) {
+
+        for (objectIndex in objectList) {
+          if (objectList[objectIndex].name ===  name) {
+            return objectList[objectIndex];
+          }
+        }
+
+        return false;
+
+      }
+      
+      function setupEventHandlers(objCanvas, objCanvasController) {
+        objCanvas.addEventListener('click', function(e) { //Add click event listener.
+          objCanvasController.mouseEventHandler(e, "Click");
+        });
+        objCanvas.addEventListener('mousemove', function(e) { //Add mouse move event listener.
+          objCanvasController.mouseEventHandler(e, "Move");
+        });
+      }
+      
+      function doExample(objCanvasController) {
+        var backgroundImage = {
+          "x":0,
+          "y":0,
+          "name":"bgImage",
+          "w":640, //Since this is resized, this must be updated
+          "h":480,
+          "sw":640, //Resize to
+          "sh":480,
+          "src": {objImage: null},
+          "shape":"image",
+          // "renderType": function(){ objCanvasController.canvasContext.fill(); objCanvasController.canvasContext.stroke(); },
+          "render":function(self) {
+            objCanvasController.drawImage(self.src, self.x, self.y, self.sw, self.sh, null, null, self.w, self.h, objCanvasController.canvasContext);
+          },
+          "clickEvent":function(x, y, self) {
+            console.log(x, y, self, "click");
+            objCanvasController.refreshScreen();
+          },
+          "moveEvent":function(x, y, self) {
+            //console.log(x, y, self, "move");
+          },
+          "visible":true
+        };
+        
+        objCanvasController.canvasObjects.push(backgroundImage);
+      
+      }
+    
+    </script>
+    
+  </head>
+  <body onload="init();">
+    <div class="canvasContainer">
+      <canvas id="canvasDraw" width = "640px" height = "480px"></canvas>
+    </div>
+  </body>
+</html>
