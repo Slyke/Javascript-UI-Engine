@@ -2,7 +2,7 @@
   By: Steven Lawler (Slyke)
   Email: steven.lawler777@gmail.com
   Creation Date: 21/09/2014
-  Version: 1.4a
+  Version: 1.5a
   Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
   Example Usage:
@@ -68,7 +68,7 @@ var CanvasControl = function() {
     "backgroundColor":"#FFFFFF"
   };
 
-  var debugConsole      = 1023; //Setting to 4096 turns on all debug messages for all functions. 1023 for all but mouse events.
+  var debugConsole      = 0; //Setting to 4096 turns on all debug messages for all functions. 1023 for all but mouse events.
   this.defaultColor     = "#000000";
   this.defaultLineWidth = "1";
 
@@ -271,16 +271,12 @@ var CanvasControl = function() {
     drawPolygon() will draw a polygon from a list.
     polygonPoints is an array of 2 points, X and Y in that order. For example: [[25, 30], [12, 50], [12, 65], ... [X, Y]]
     autoArrange will order the polygon list so that it is a single point. It calculates this using the Graham Scan algorithm.
-    The render type is a canvas context function that specifies if the square is filled, or just the border is drawn.
+    The render type is a canvas context function that specifies if the polygon is filled, or just the border is drawn.
     The context is optional and is what it will be drawing to. If it's null, or not specified, it will use the one from the class.
     Style is another optional parameter that allows the line thickness and the line color to be specified.
   // */
   this.drawPolygon = function (polygonPoints, autoArrange, renderType, context, style) {
     context = (context === undefined || context == null ? this.canvasContext : context);
-    x1 = (x1 === undefined || x1 == null || x1 == "" ? 0 : x1);
-    y1 = (y1 === undefined || y1 == null || y1 == "" ? 0 : y1);
-    x2 = (x2 === undefined || x2 == null || x2 == "" ? 0 : x2);
-    y2 = (y2 === undefined || y2 == null || y2 == "" ? 0 : y2);
     autoArrange = (autoArrange === undefined || autoArrange == null || autoArrange == "" ? true : autoArrange);
     originalFillStyle = context.fillStyle;
     originalStrokeStyle = context.strokeStyle;
@@ -301,11 +297,16 @@ var CanvasControl = function() {
     }
 
     context.beginPath();
-    context.moveTo(polygonPoints[0][0], polygonPoints[0][1]);
-    for (var i = 1; i < polygonPoints; i++) {
-      context.lineTo(polygonPoints[i][0], polygonPoints[i][0]);
+    if (polygonPoints.length > 0) {
+      context.moveTo(polygonPoints[0][0], polygonPoints[0][1]);
+      for (var i = 1; i < polygonPoints.length; i++) {
+        context.lineTo(polygonPoints[i][0], polygonPoints[i][1]);
+      }
+      // context.moveTo(polygonPoints[0][0], polygonPoints[0][1]);
     }
+
     context.closePath();
+    renderType();
     context.fillStyle = originalFillStyle;
     context.strokeStyle = originalStrokeStyle;
     if (debugConsole & 64) {console.log("[64]: drawPolygon(polygonPoints, autoArrange, renderType, context, style): ", polygonPoints, autoArrange, renderType, context, style);}
@@ -337,17 +338,41 @@ var CanvasControl = function() {
       sw = (h === undefined ? null : sw);
       sh = (h === undefined ? null : sh);
       originalFillStyle = context.fillStyle;
-      srcImage.objImage.onload = function() {
-        srcImage.w = (srcImage.w <= 0 ? srcImage.objImage.width : srcImage.w);
-        srcImage.h = (srcImage.h <= 0 ? srcImage.objImage.height : srcImage.h);
+
+      if (srcImage.objImage) {
+        srcImage.w = (srcImage.w < 0 ? srcImage.objImage.width : srcImage.w);
+        srcImage.h = (srcImage.h < 0 ? srcImage.objImage.height : srcImage.h);
         context.beginPath();
-        if (sx == null && sy == null && sw == null && sh == null) {
-          context.drawImage(srcImage.objImage, x, y);
+        if (sx == null || sy == null || sw == null || sh == null || sx == 0 || sy == 0 || sw == 0 || sh == 0) {
+          if (w < 0 || h < 0) {
+            context.drawImage(srcImage.objImage, x, y);
+          } else {
+            context.drawImage(srcImage.objImage, x, y, w, h);
+          }
         } else {
           context.drawImage(srcImage.objImage, sx, sy, sw, sh, x, y, w, h);
         }
         context.closePath();
+
+        srcImage.onload = function() {
+          srcImage.hasLoaded = true;
+          srcImage.w = (srcImage.w < 0 ? srcImage.objImage.width : srcImage.w);
+          srcImage.h = (srcImage.h < 0 ? srcImage.objImage.height : srcImage.h);
+          context.beginPath();
+          if (sx == null || sy == null || sw == null || sh == null || sx == 0 || sy == 0 || sw == 0 || sh == 0) {
+            if (w < 0 || h < 0) {
+              context.drawImage(srcImage.objImage, x, y);
+            } else {
+              context.drawImage(srcImage.objImage, x, y, w, h);
+            }
+          } else {
+            context.drawImage(srcImage.objImage, sx, sy, sw, sh, x, y, w, h);
+          }
+
+          context.closePath();
+        };
       }
+
       context.fillStyle = originalFillStyle;
       if (debugConsole & 128) {console.log("[128]: drawImage(srcImage, x, y, w, h, sx, sy, sw, sh, context): ", srcImage, x, y, w, h, sx, sy, sw, sh, context);}
     };
@@ -374,7 +399,7 @@ var CanvasControl = function() {
     }
 
     context.fillStyle = originalFillStyle;
-    console.log("Cleared Canvas: ", this.canvasObject.width, this.canvasObject.height);
+    // console.log("Cleared Canvas: ", this.canvasObject.width, this.canvasObject.height);
     if (debugConsole & 256) {console.log("[256]: clearCanvas(backgroundColor, context, transparentBackground): ", backgroundColor, context, transparentBackground);}
   };
 
@@ -469,6 +494,7 @@ var CanvasControl = function() {
             }
           } else if (objectList[objectIndex].shape=="polygon") {
             // This is based off the algorithm and code from here: http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+            var vs = objectList[objectIndex].coordinates[0];
             var isInside = false;
             for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
               var xi = vs[i][0];
@@ -476,7 +502,7 @@ var CanvasControl = function() {
               var xj = vs[j][0];
               var yj = vs[j][1];
 
-              var intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+              var intersect = ((yi > mouseY) != (yj > mouseY)) && (mouseX < (xj - xi) * (mouseY - yi) / (yj - yi) + xi);
               if (intersect) { isInside = !isInside; }
             }
             if (isInside) {
@@ -502,23 +528,42 @@ var CanvasControl = function() {
       var avg_points = function(pts) {
           var x = 0;
           var y = 0;
-          for(var i = 0; i < pts.length; i++) {
+          for (var i = 0; i < pts.length; i++) {
               x += pts[i][0];
               y += pts[i][1];
           }
           return [x / pts.length, y / pts.length];
       }
+
       var center = avg_points(polygonPoints);
 
       // Calculate the angle between each point and the centre point, and sort by those angles
-      for(var i = 0; i < polygonPoints.length; i++) {
+      for (var i = 0; i < polygonPoints.length; i++) {
           polygonPoints[i][2] = Math.atan2(polygonPoints[i][0] - center[0], polygonPoints[i][1] - center[1]);
       }
 
       polygonPoints = polygonPoints.sort(function(p1, p2) {
           return p1[2] - p2[2];
       });
-      return polygonPoints;
+
+      var newPolyPoints = [];
+      polygonPoints.forEach(function(item) {
+        if (newPolyPoints.indexOf(item) < 0) {
+          newPolyPoints.push(item);
+        }
+      });
+
+      if (newPolyPoints.length > 0) {
+        if (newPolyPoints[newPolyPoints.length - 1][0] !== newPolyPoints[0][0] || newPolyPoints[newPolyPoints.length - 1][1] !== newPolyPoints[0][1]) {
+          newPolyPoints.push([newPolyPoints[0][0], newPolyPoints[0][1]]);
+        }
+
+        for (var j = 0; j < newPolyPoints.length; j++) {
+          newPolyPoints[j] = [newPolyPoints[j][0], newPolyPoints[j][1]];
+        }
+      }
+
+      return newPolyPoints;
   };
 
 }
