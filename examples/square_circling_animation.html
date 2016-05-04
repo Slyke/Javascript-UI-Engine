@@ -7,11 +7,16 @@
     
     <script>
     
-      var PixelsPerSecond = 70; 
-    
+      var DegreesPerSecond = 2;
+      var circleCenterX = 250;
+      var circleCenterY = 250;
+      var circleRadius = 70;
+      
       var objCanvas = null;
       var canvasControl = null;
       var lastAnimationTime = -1;
+      var currentAngle = 0;
+      Math.TAU = (Math.PI * 2);
       
       function init() {
         objCanvas = document.getElementById("canvasDraw");
@@ -39,10 +44,10 @@
       
       function doExample(objCanvasController) {
         var newRect = { //Create a new object
-          "x":50,
-          "y":50,
-          "w":200,
-          "h":200,
+          "x":200,
+          "y":200,
+          "w":50,
+          "h":50,
           "name":"box",
           "shape":"rect", //This lets the click and mouse move handler know what type of object it is.
           "render":function(self) {
@@ -83,14 +88,12 @@
         
         var timeDiff = (currentTime - lastAnimationTime); // Calculate the difference between now and the last time the screen was drawn.
         
-        var movePixels = ((timeDiff / 1000) * PixelsPerSecond); // Workout how much of a second has passed, and apply that percentage to the pixels to travel per second.
+        currentAngle += ((timeDiff / 1000) * DegreesPerSecond); // Workout how much of a second has passed, and apply that percentage to the angle to travel per second.
         
-        movingBox.x += movePixels;
-        
-        if (movingBox.x > 650) { // If the box goes too far off screen, send it back to the other side.
-          movingBox.x = (movingBox.w * -1);
-        }
-        
+        // Calculate X and Y positions
+        movingBox.x = (circleCenterX + (circleRadius * Math.cos(currentAngle))); 
+        movingBox.y = (circleCenterY + (circleRadius * Math.sin(currentAngle)));
+
         canvasControl.refreshScreen(); // Redraw the canvas
         lastAnimationTime = currentTime;
         
