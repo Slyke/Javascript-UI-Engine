@@ -83,7 +83,6 @@
         requestAnimationFrame(redrawScreen); //Let the browser handle it's own redraw speed, instead of using setInterval.
         
         var movingBox = findObjectByName("box", canvasControl.canvasObjects);
-        movingBox.x += 5;
         var currentTime = new Date().getTime();
         
         var timeDiff = (currentTime - lastAnimationTime); // Calculate the difference between now and the last time the screen was drawn.
