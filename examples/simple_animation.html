@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Draw Square on Canvas</title>
+    <script src="../src/canvas_ui.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    
+    <script>
+    
+      var PixelsPerSecond = 70; 
+    
+      var objCanvas = null;
+      var canvasControl = null;
+      var lastAnimationTime = -1;
+      
+      function init() {
+        objCanvas = document.getElementById("canvasDraw");
+        canvasControl = new CanvasControl(); //Create the class
+        
+        objContext = canvasControl.setupCanvas(objCanvas);
+        
+        setupEventHandlers(objCanvas, canvasControl);
+        doExample(canvasControl);
+        
+        canvasControl.refreshScreen();
+        
+        redrawScreen();
+        
+      }
+      
+      function setupEventHandlers(objCanvas, objCanvasController) {
+        objCanvas.addEventListener('click', function(e) { //Add click event listener.
+          objCanvasController.mouseEventHandler(e, "Click");
+        });
+        objCanvas.addEventListener('mousemove', function(e) { //Add mouse move event listener.
+          objCanvasController.mouseEventHandler(e, "Move");
+        });
+      }
+      
+      function doExample(objCanvasController) {
+        var newRect = { //Create a new object
+          "x":50,
+          "y":50,
+          "w":200,
+          "h":200,
+          "name":"box",
+          "shape":"rect", //This lets the click and mouse move handler know what type of object it is.
+          "render":function(self) {
+            objCanvasController.drawRect(self.x, self.y, self.w, self.h);
+          },
+          "clickEvent":function(x, y, self) {
+            console.log(x, y, self, "click");
+            alert("You clicked me at: " + x + ", " + y + "!");
+          },
+          "moveEvent":function(x, y, self) {
+            //console.log(x, y, self, "move"); // Uncomment to see mouse move console.logs.
+          },
+          "visible":true
+        }
+        
+        objCanvasController.canvasObjects.push(newRect);
+      
+      }
+      
+      function findObjectByName(name, objectList) {
+
+        for (objectIndex in objectList) {
+          if (objectList[objectIndex].name ===  name) {
+            return objectList[objectIndex];
+          }
+        }
+
+        return false;
+
+      }
+      
+      function redrawScreen() {
+        requestAnimationFrame(redrawScreen); //Let the browser handle it's own redraw speed, instead of using setInterval.
+        
+        var movingBox = findObjectByName("box", canvasControl.canvasObjects);
+        movingBox.x += 5;
+        var currentTime = new Date().getTime();
+        
+        var timeDiff = (currentTime - lastAnimationTime); // Calculate the difference between now and the last time the screen was drawn.
+        
+        var movePixels = ((timeDiff / 1000) * PixelsPerSecond); // Workout how much of a second has passed, and apply that percentage to the pixels to travel per second.
+        
+        movingBox.x += movePixels;
+        
+        if (movingBox.x > 650) { // If the box goes too far off screen, send it back to the other side.
+          movingBox.x = (movingBox.w * -1);
+        }
+        
+        canvasControl.refreshScreen(); // Redraw the canvas
+        lastAnimationTime = currentTime;
+        
+      }
+    
+    </script>
+    
+  </head>
+  <body onload="init();">
+    <div class="canvasContainer">
+      <canvas id="canvasDraw" width = "640px" height = "480px"></canvas>
+    </div>
+  </body>
+</html>
