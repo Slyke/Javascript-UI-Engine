@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Draw Square on Canvas</title>
+    <script src="../src/canvas_ui.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    
+    <script>
+    
+      var pixelsPerSecond = 100;
+      
+      var objCanvas = null;
+      var canvasControl = null;
+      var lastAnimationTime = -1;
+      var currentAngle = 0;
+      Math.TAU = (Math.PI * 2);
+      
+      function init() {
+        lastAnimationTime = new Date().getTime();
+        currentAngle = Math.floor((Math.random() * 360) + 0);
+        
+        objCanvas = document.getElementById("canvasDraw");
+        canvasControl = new CanvasControl(); //Create the class
+        
+        objContext = canvasControl.setupCanvas(objCanvas);
+        
+        setupEventHandlers(objCanvas, canvasControl);
+        doExample(canvasControl);
+        
+        canvasControl.refreshScreen();
+        
+        redrawScreen();
+        
+      }
+      
+      function setupEventHandlers(objCanvas, objCanvasController) {
+        objCanvas.addEventListener('click', function(e) { //Add click event listener.
+          objCanvasController.mouseEventHandler(e, "Click");
+        });
+        objCanvas.addEventListener('mousemove', function(e) { //Add mouse move event listener.
+          objCanvasController.mouseEventHandler(e, "Move");
+        });
+      }
+      
+      function doExample(objCanvasController) {
+        var newRect = { //Create a new object
+          "x":150,
+          "y":150,
+          "w":50,
+          "h":50,
+          "name":"box",
+          "shape":"rect", //This lets the click and mouse move handler know what type of object it is.
+          "render":function(self) {
+            objCanvasController.drawRect(self.x, self.y, self.w, self.h);
+          },
+          "clickEvent":function(x, y, self) {
+            currentAngle = Math.floor((Math.random() * 360) + 0);
+          },
+          "moveEvent":function(x, y, self) {
+            //console.log(x, y, self, "move"); // Uncomment to see mouse move console.logs.
+          },
+          "visible":true
+        }
+        
+        objCanvasController.canvasObjects.push(newRect);
+      
+      }
+      
+      function findObjectByName(name, objectList) {
+
+        for (objectIndex in objectList) {
+          if (objectList[objectIndex].name ===  name) {
+            return objectList[objectIndex];
+          }
+        }
+
+        return false;
+
+      }
+      
+      function redrawScreen() {
+        requestAnimationFrame(redrawScreen); //Let the browser handle it's own redraw speed, instead of using setInterval.
+        
+        var movingBox = findObjectByName("box", canvasControl.canvasObjects);
+        var currentTime = new Date().getTime();
+        
+        var timeDiff = (currentTime - lastAnimationTime); // Calculate the difference between now and the last time the screen was drawn.
+        
+        var newDistance = ((timeDiff / 1000) * pixelsPerSecond); // Workout how much of a second has passed, and apply that percentage to the angle to travel per second.
+
+        // Calculate X and Y positions
+        var dX = (((Math.cos(currentAngle * Math.PI / 180) * newDistance) + movingBox.x) - movingBox.x);
+        var dY = (((Math.sin(currentAngle * Math.PI / 180) * newDistance) + movingBox.y) - movingBox.y);
+
+        // Bounce off bounds
+        if (movingBox.x < 0) {
+          var reflectorAngle = (((currentAngle - 180) * 2) - 180);
+          currentAngle = reflectorAngle;
+          movingBox.x = 1;
+        } else if (movingBox.y < 0) {
+          var reflectorAngle = (((currentAngle - 180) * 2) - 270);
+          currentAngle = reflectorAngle;
+          movingBox.y = 1;
+        } else if (movingBox.y + movingBox.h > 480) {
+          var reflectorAngle = (((currentAngle - 180) * 2) - 90);
+          currentAngle = reflectorAngle;
+          movingBox.y = 479 - movingBox.h;
+        } else if (movingBox.x + movingBox.w > 640) {
+          var reflectorAngle = (((currentAngle - 180) * 2) - 0);
+          currentAngle = reflectorAngle;
+          movingBox.x = 639 - movingBox.w;
+        }
+        
+        //Normalize angle between 0 and 360;
+        currentAngle = currentAngle % 360;
+        if (currentAngle < 0) {
+            currentAngle += 360;
+        }
+
+        movingBox.x += dX;
+        movingBox.y += dY;
+        
+        canvasControl.refreshScreen(); // Redraw the canvas
+        lastAnimationTime = currentTime;
+        
+      }
+    
+    </script>
+    
+  </head>
+  <body onload="init();">
+    <div class="canvasContainer">
+    Click the square to choose another random angle.
+      <canvas id="canvasDraw" width = "640px" height = "480px"></canvas>
+    </div>
+  </body>
+</html>
