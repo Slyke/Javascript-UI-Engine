@@ -4,35 +4,35 @@
     <title>Draw Square on Canvas</title>
     <script src="../src/canvas_ui.js"></script>
     <link rel="stylesheet" type="text/css" href="styles.css">
-    
+
     <script>
-    
+
       var pixelsPerSecond = 100;
-      
+
       var objCanvas = null;
       var canvasControl = null;
       var lastAnimationTime = -1;
       var currentAngle = 0;
       Math.TAU = (Math.PI * 2);
-      
+
       function init() {
         lastAnimationTime = new Date().getTime();
         currentAngle = Math.floor((Math.random() * 360) + 0);
-        
+
         objCanvas = document.getElementById("canvasDraw");
         canvasControl = new CanvasControl(); //Create the class
-        
+
         objContext = canvasControl.setupCanvas(objCanvas);
-        
+
         setupEventHandlers(objCanvas, canvasControl);
         doExample(canvasControl);
-        
+
         canvasControl.refreshScreen();
-        
+
         redrawScreen();
-        
+
       }
-      
+
       function setupEventHandlers(objCanvas, objCanvasController) {
         objCanvas.addEventListener('click', function(e) { //Add click event listener.
           objCanvasController.mouseEventHandler(e, "Click");
@@ -41,7 +41,7 @@
           objCanvasController.mouseEventHandler(e, "Move");
         });
       }
-      
+
       function doExample(objCanvasController) {
         var newRect = { //Create a new object
           "x":150,
@@ -61,11 +61,11 @@
           },
           "visible":true
         }
-        
+
         objCanvasController.canvasObjects.push(newRect);
-      
+
       }
-      
+
       function findObjectByName(name, objectList) {
 
         for (objectIndex in objectList) {
@@ -77,15 +77,15 @@
         return false;
 
       }
-      
+
       function redrawScreen() {
         requestAnimationFrame(redrawScreen); //Let the browser handle it's own redraw speed, instead of using setInterval.
-        
+
         var movingBox = findObjectByName("box", canvasControl.canvasObjects);
         var currentTime = new Date().getTime();
-        
+
         var timeDiff = (currentTime - lastAnimationTime); // Calculate the difference between now and the last time the screen was drawn.
-        
+
         var newDistance = ((timeDiff / 1000) * pixelsPerSecond); // Workout how much of a second has passed, and apply that percentage to the angle to travel per second.
 
         // Calculate X and Y positions
@@ -102,7 +102,7 @@
           currentAngle = reflectorAngle;
           movingBox.y = 1;
         } else if (movingBox.y + movingBox.h > 480) {
-          var reflectorAngle = (((currentAngle - 180) * 2) - 90);
+          var reflectorAngle = (((currentAngle - 180) * 2) + 45);
           currentAngle = reflectorAngle;
           movingBox.y = 479 - movingBox.h;
         } else if (movingBox.x + movingBox.w > 640) {
@@ -110,7 +110,7 @@
           currentAngle = reflectorAngle;
           movingBox.x = 639 - movingBox.w;
         }
-        
+
         //Normalize angle between 0 and 360;
         currentAngle = currentAngle % 360;
         if (currentAngle < 0) {
@@ -119,14 +119,14 @@
 
         movingBox.x += dX;
         movingBox.y += dY;
-        
+
         canvasControl.refreshScreen(); // Redraw the canvas
         lastAnimationTime = currentTime;
-        
+
       }
-    
+
     </script>
-    
+
   </head>
   <body onload="init();">
     <div class="canvasContainer">

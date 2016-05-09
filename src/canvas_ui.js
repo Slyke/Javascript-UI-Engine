@@ -64,8 +64,8 @@
 
 var CanvasControl = function() {
 
-  defaultBackgroundObject= {
-    "backgroundColor":"#FFFFFF"
+  defaultBackgroundObject = {
+    "backgroundColor":"#000000"
   };
 
   var debugConsole      = 0; //Setting to 4096 turns on all debug messages for all functions. 1023 for all but mouse events.
@@ -85,8 +85,9 @@ var CanvasControl = function() {
     It returns the canvas context once it's completed.
     You can also use CanvasControl.canvasContext for the canvas if you want to use this as a singleton once this function executes.
   // */
-  this.setupCanvas = function(objCanvas, objectList) {
+  this.setupCanvas = function(objCanvas, objectList, backgroundObject) {
     objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
+    if (backgroundObject) { defaultBackgroundObject = backgroundObject; }
     this.canvasObject = objCanvas;
     objectList = [];
     objectList.push();
@@ -107,7 +108,6 @@ var CanvasControl = function() {
   // */
   this.renderObjects = function(objectList) {
     objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
-    this.clearCanvas();
     for (canvasObject in objectList) {
       if (objectList[canvasObject].visible !== undefined && objectList[canvasObject].visible != null) {
         if (objectList[canvasObject].visible != false) {
@@ -395,11 +395,10 @@ var CanvasControl = function() {
     if (transparentBackground) {
       context.clearRect(0, 0, this.canvasObject.width, this.canvasObject.height);
     } else {
-      this.drawRect(0, 0, this.canvasObject.width, this.canvasObject.height, function(){ context.fill(); }, context, {"fillStyle":defaultBackgroundObject.backgroundColor});
+      this.drawRect(0, 0, this.canvasObject.width, this.canvasObject.height, function(){ context.fill(); }, context, {"fillStyle":backgroundColor});
     }
 
     context.fillStyle = originalFillStyle;
-    // console.log("Cleared Canvas: ", this.canvasObject.width, this.canvasObject.height);
     if (debugConsole & 256) {console.log("[256]: clearCanvas(backgroundColor, context, transparentBackground): ", backgroundColor, context, transparentBackground);}
   };
 
@@ -408,12 +407,12 @@ var CanvasControl = function() {
     You must call this function each time you add, remove to change an object if you want to see the changes.
     Both context and objectList are optional and will default to the class's if not specified.
   // */
-  this.refreshScreen = function(context, objectList) {
+  this.refreshScreen = function(transparentBackground, context, objectList) {
     context = (context === undefined || context == null ? this.canvasContext : context);
     objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
-    this.clearCanvas(context);
+    this.clearCanvas(null, context, transparentBackground);
     this.renderObjects(objectList);
-    if (debugConsole & 512) {console.log("[512]: refreshScreen(context, objectList): ", context, objectList);}
+    if (debugConsole & 512) {console.log("[512]: refreshScreen(transparentBackground, context, objectList): ", transparentBackground, context, objectList);}
   };
 
   /*

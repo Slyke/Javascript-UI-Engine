@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Asteroids</title>
+    <script src="../src/canvas_ui.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+
+    <script>
+
+      var shipPixelsPerSecond = 100;
+      var borderBufferZone = 500;
+
+      var objCanvas = null;
+      var canvasControl = null;
+      var lastAnimationTime = -1;
+      var currentAngle = 0;
+
+      var gameDimensions = [0, 0];
+
+      function init() {
+        lastAnimationTime = new Date().getTime();
+        currentAngle = Math.floor((Math.random() * 360) + 0);
+
+        objCanvas = document.getElementById("canvasDraw");
+        canvasControl = new CanvasControl();
+
+        objContext = canvasControl.setupCanvas(objCanvas, null, {backgroundColor:"#000000"});
+
+        setupEventHandlers(objCanvas, canvasControl);
+        gameDimensions = [objCanvas.width, objCanvas.height];
+
+        setupGame(canvasControl);
+        //doExample(canvasControl);
+
+        canvasControl.refreshScreen(false);
+
+        redrawScreen();
+
+      }
+
+      function setupEventHandlers(objCanvas, objCanvasController) {
+        objCanvas.addEventListener('click', function(e) { //Add click event listener.
+          objCanvasController.mouseEventHandler(e, "Click");
+        });
+        objCanvas.addEventListener('mousemove', function(e) { //Add mouse move event listener.
+          objCanvasController.mouseEventHandler(e, "Move");
+        });
+      }
+
+      function setupGame(objCanvasController) {
+        createBackground(objCanvasController);
+        createStars(objCanvasController, 1000, 6000);
+      }
+
+      function createBackground(objCanvasController) {
+        var blackBackgroundObject = {
+          "x":0,
+          "y":0,
+          "w":gameDimensions[0],
+          "h":gameDimensions[1],
+          "shape":"rect",
+          "gameProperties": {
+            "class":"background"
+          },
+          "render":function(self) {
+            objCanvasController.drawRect(self.x, self.y, self.w, self.h);
+          },
+          "clickEvent":function(x, y, self) {
+            //Do nothing
+          },
+          "moveEvent":function(x, y, self) {
+            var gameStars = getGameObject("star", canvasControl.canvasObjects);
+            var newAngle = Math.atan2((gameDimensions[1] / 2) - y, (gameDimensions[0] / 2) - x) * 180 / Math.PI;
+            var newSpeed = Math.sqrt((x - (gameDimensions[0] / 2)) * (x - (gameDimensions[0] / 2)) + (y - (gameDimensions[1] / 2)) * (y - (gameDimensions[1] / 2)));
+
+            for (var i = 0; i < gameStars.length; i++) {
+              gameStars[i].gameProperties.vector.angle = newAngle;
+              gameStars[i].gameProperties.vector.velocity = gameStars[i].gameProperties.starSize * newSpeed * 0.75;
+            }
+            //console.log(x, y, self, "move"); // Uncomment to see mouse move console.logs.
+          },
+          "visible":false
+        }
+
+        objCanvasController.canvasObjects.push(blackBackgroundObject);
+
+      }
+
+      function createStars(objCanvasController, minimumStars, maximumStars, minStarDistance, maxStarDistance) {
+
+        maximumStars = (!maximumStars || maximumStars < 0 ? 200 : maximumStars);
+        minimumStars = (!minimumStars || minimumStars < 0 || minimumStars > maximumStars ? maximumStars - 1 : minimumStars);
+
+        var initialStarCount = Math.floor((Math.random() * (maximumStars - minimumStars)) + minimumStars);
+        console.log("Star count:", initialStarCount);
+
+        for (var i = 0; i < initialStarCount; i++) {
+          // There is a bug with the starPositionX and starPositionY random generator, which causes a "break" in the starfield.
+          var starPositionX = Math.floor((Math.random() * (gameDimensions[0] + borderBufferZone)) + -borderBufferZone);
+          var starPositionY = Math.floor((Math.random() * (gameDimensions[1] + borderBufferZone)) + -borderBufferZone);
+          var starPositionZ = ((Math.random() * 2.01) + 0.01);
+          // var randomAngle = ((Math.random() * 359) + 0);
+          var randomAngle = 0;
+
+          var starColor = "#" + Math.floor((Math.random() * 255) + 1).toString(16) + Math.floor((Math.random() * 255) + 1).toString(16) + Math.floor((Math.random() * 255) + 1).toString(16);
+
+          var newStar = {
+            "x":starPositionX,
+            "y":starPositionY,
+            "r":starPositionZ,
+            "s":null,
+            "f":null,
+            "shape":"arc",
+            "gameProperties": {
+              "class":"star",
+              "color":starColor,
+              "starSize":starPositionZ,
+              "vector": {
+                "angle":randomAngle,
+                "velocity":starPositionZ * 100
+              }
+            },
+            "renderType": function(){ objCanvasController.canvasContext.fill();},
+            "render":function(self) {
+              objCanvasController.drawArc(self.x, self.y, self.r, self.s, self.f, self.renderType, objCanvasController.canvasContext, {"fillStyle":self.gameProperties.color} );
+            },
+            "visible":true
+          }
+
+          objCanvasController.canvasObjects.push(newStar);
+        }
+
+      }
+
+      function findObjectByName(name, objectList) {
+
+        for (objectIndex in objectList) {
+          if (objectList[objectIndex].name ===  name) {
+            return objectList[objectIndex];
+          }
+        }
+
+        return false;
+
+      }
+
+      function redrawScreen() {
+        requestAnimationFrame(redrawScreen);
+
+        updateGame();
+
+      }
+
+      function getGameObject(gameClass, objectList) {
+        var filteredObjectList = [];
+        for (objectIndex in objectList) {
+          if (objectList[objectIndex].gameProperties.class === gameClass) {
+            (function(objectToAdd){
+              filteredObjectList.push(objectToAdd);
+            })(objectList[objectIndex]);
+          }
+        }
+
+        return filteredObjectList;
+      }
+
+      function updateGame() {
+        var gameStars = getGameObject("star", canvasControl.canvasObjects);
+
+        function moveStars(gameStars, ratioAmount) {
+          for (var i = 0; i < gameStars.length; i++) {
+
+            var dX = (((Math.cos(gameStars[i].gameProperties.vector.angle * Math.PI / 180) * (gameStars[i].gameProperties.vector.velocity * ratioAmount)) + gameStars[i].x) - gameStars[i].x);
+            var dY = (((Math.sin(gameStars[i].gameProperties.vector.angle * Math.PI / 180) * (gameStars[i].gameProperties.vector.velocity * ratioAmount)) + gameStars[i].y) - gameStars[i].y);
+
+            if (gameStars[i].x > gameDimensions[0] + borderBufferZone) {
+              gameStars[i].x = -borderBufferZone;
+            } else if (gameStars[i].x < -borderBufferZone) {
+              gameStars[i].x = gameDimensions[0] + borderBufferZone;
+            } else if (gameStars[i].y < -borderBufferZone) {
+              gameStars[i].y = gameDimensions[1] + borderBufferZone;
+            } else if (gameStars[i].y > gameDimensions[1] + borderBufferZone) {
+              gameStars[i].y = -borderBufferZone;
+            }
+
+            gameStars[i].x += dX;
+            gameStars[i].y += dY;
+
+          }
+
+        }
+
+        var currentTime = new Date().getTime();
+        var newDistanceRatio = ((currentTime - lastAnimationTime) / 1000);
+
+        moveStars(gameStars, newDistanceRatio);
+
+        canvasControl.refreshScreen(false);
+        lastAnimationTime = currentTime;
+
+      }
+
+    </script>
+
+  </head>
+  <body onload="init();">
+    <div class="canvasContainer">
+      <canvas id="canvasDraw" width = "1080px" height = "720px"></canvas>
+    </div>
+  </body>
+</html>
