@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Asteroids</title>
+    <script src="../src/canvas_ui.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+
+    <script>
+
+      var borderBufferZone = 500;
+      var minStars = 2500;
+      var maxStars = 4000;
+
+      var objCanvas = null;
+      var canvasControl = null;
+      var lastAnimationTime = -1;
+      var currentAngle = 0;
+      var isWarping = false;
+      var mouseCoords = [-1, -1];
+      var objlblCurrentState = null;
+
+      var gameDimensions = [0, 0];
+
+      function init() {
+        lastAnimationTime = new Date().getTime();
+        currentAngle = Math.floor((Math.random() * 360) + 0);
+
+        objCanvas = document.getElementById("canvasDraw");
+        canvasControl = new CanvasControl();
+
+        objContext = canvasControl.setupCanvas(objCanvas, null, {backgroundColor:"#000000"});
+
+        setupEventHandlers(objCanvas, canvasControl);
+        gameDimensions = [objCanvas.width, objCanvas.height];
+
+        setupGame(canvasControl);
+
+        redrawScreen();
+
+      }
+
+      function setupEventHandlers(objCanvas, objCanvasController) {
+        objCanvas.addEventListener('click', function(e) { //Add click event listener.
+          objCanvasController.mouseEventHandler(e, "Click");
+        });
+        objCanvas.addEventListener('mousemove', function(e) { //Add mouse move event listener.
+          objCanvasController.mouseEventHandler(e, "Move");
+        });
+        window.addEventListener("keydown", function(e){
+          keyEvents(e, "down");
+        });
+        window.addEventListener("keyup", function(e){
+          keyEvents(e, "up");
+        });
+        window.addEventListener("keypress", function(e){
+          keyEvents(e, "press");
+        });
+      }
+
+      function keyEvents(event, eventType) {
+        if (eventType === "press") {
+          // Rerandomize star vectors and sizes
+          if (event.keyCode === 32) { //32 is spacebar
+            findObjectByName("lblCurrentState", canvasControl.canvasObjects).text = "Current State: Random";
+            var gameStars = getGameObject("star", canvasControl.canvasObjects);
+
+            for (var i = 0; i < gameStars.length; i++) {
+              var starPositionZ = ((Math.random() * 50) + 0.01);
+              var starSize = ((Math.random() * 2.01) + 0.01);
+              var randomAngle = ((Math.random() * 359) + 0);
+
+              gameStars[i].gameProperties.vector.angle = randomAngle;
+              gameStars[i].gameProperties.vector.velocity = starPositionZ;
+              gameStars[i].gameProperties.starSize = starSize;
+              gameStars[i].gameProperties.distance = starPositionZ;
+            }
+          }
+        }
+      }
+
+      function setupGame(objCanvasController) {
+        createBackground(objCanvasController);
+        createDataText(objCanvasController);
+        createStars(objCanvasController, minStars, maxStars);
+      }
+
+      function findObjectByName(name, objectList) {
+
+        for (objectIndex in objectList) {
+          if (objectList[objectIndex].name ===  name) {
+            return objectList[objectIndex];
+          }
+        }
+
+        return false;
+
+      }
+
+      function redrawScreen() {
+        requestAnimationFrame(redrawScreen);
+
+        updateGame();
+
+      }
+
+      function getGameObject(gameClass, objectList) {
+        var filteredObjectList = [];
+        for (objectIndex in objectList) {
+          if (objectList[objectIndex].gameProperties.class === gameClass) {
+            (function(objectToAdd){
+              filteredObjectList.push(objectToAdd);
+            })(objectList[objectIndex]);
+          }
+        }
+
+        return filteredObjectList;
+      }
+
+      function createBackground(objCanvasController) {
+        var blackBackgroundObject = { // This is so we can track the mouse position
+          "x":0,
+          "y":0,
+          "w":gameDimensions[0],
+          "h":gameDimensions[1],
+          "shape":"rect",
+          "gameProperties": {
+            "class":"background"
+          },
+          "render":function(self) {
+            objCanvasController.drawRect(self.x, self.y, self.w, self.h);
+          },
+          "clickEvent":function(x, y, self) {
+            isWarping = !isWarping;
+            if (isWarping) {
+              findObjectByName("lblCurrentState", objCanvasController.canvasObjects).text = "Current State: Warping";
+              var gameStars = getGameObject("star", canvasControl.canvasObjects);
+              for (var i = 0; i < gameStars.length; i++) {
+                mouseCoords = [x, y];
+
+                var newAngle = ((Math.atan2(mouseCoords[1] - gameStars[i].y, mouseCoords[0] - gameStars[i].x) * 180) / Math.PI);
+                var newDistance = Math.sqrt((gameStars[i].x - mouseCoords[0]) * (gameStars[i].x - mouseCoords[0]) + (gameStars[i].y - mouseCoords[1]) * (gameStars[i].y - mouseCoords[1]));
+
+                // Centre screen warping
+                // var newAngle = ((Math.sqrt((gameStars[i].x - (gameDimensions[0] / 2)) * (gameStars[i].x - (gameDimensions[0] / 2)) + (gameStars[i].y - (gameDimensions[1] / 2)) * (gameStars[i].y - (gameDimensions[1] / 2)));
+
+                gameStars[i].gameProperties.vector.angle = newAngle;
+                gameStars[i].gameProperties.vector.velocity = gameStars[i].gameProperties.distance * newDistance * 0.02;
+
+              }
+
+            } else {
+              findObjectByName("lblCurrentState", objCanvasController.canvasObjects).text = "Current State: Moving";
+            }
+
+          },
+          "moveEvent":function(x, y, self) {
+            var gameStars = getGameObject("star", canvasControl.canvasObjects);
+
+            var newSpeed = Math.sqrt((x - (gameDimensions[0] / 2)) * (x - (gameDimensions[0] / 2)) + (y - (gameDimensions[1] / 2)) * (y - (gameDimensions[1] / 2)));
+            var newAngle = ((Math.atan2((gameDimensions[1] / 2) - y, (gameDimensions[0] / 2) - x) * 180) / Math.PI);
+
+            for (var i = 0; i < gameStars.length; i++) {
+              var newStarDistance = Math.sqrt((gameStars[i].x - x) * (gameStars[i].x - x) + (gameStars[i].y - y) * (gameStars[i].y - y));
+
+              if (isWarping) {
+
+              } else {
+                gameStars[i].gameProperties.vector.angle = newAngle;
+                gameStars[i].gameProperties.vector.velocity = gameStars[i].gameProperties.distance * newSpeed * 0.02;
+                // We have to use objlblCurrentState since using the findObjectByName function is expensive when cycling through many stars every mousemove (it WILL lag your screen).
+                objlblCurrentState.text = "Current State: Moving - Heading: " + Math.round(newAngle + 180, 0) + "  - Speed: " + Math.round(newSpeed, 0);
+              }
+            }
+          },
+          "visible":false
+        }
+
+        objCanvasController.canvasObjects.push(blackBackgroundObject);
+
+      }
+
+      function createDataText(objCanvasController) {
+        var lblStarCount = {
+          "x":0,
+          "y":0,
+          "name":"lblStarCount",
+          "text":"Star Count: ",
+          "shape":"text",
+          "gameProperties": {
+            "class":"text"
+          },
+          "render":function(self) {
+            objCanvasController.drawText(self.x, self.y, self.text, self, null, null, {"fillStyle":"#99FF00"});
+          },
+          "visible":true
+        };
+
+        var lblState = {
+          "x":0,
+          "y":15,
+          "name":"lblCurrentState",
+          "text":"Current State: Random",
+          "shape":"text",
+          "gameProperties": {
+            "class":"text"
+          },
+          "render":function(self) {
+            objCanvasController.drawText(self.x, self.y, self.text, self, null, null, {"fillStyle":"#99FF00"});
+          },
+          "visible":true
+        }
+        objlblCurrentState = lblState;
+        objCanvasController.canvasObjects.push(lblStarCount);
+        objCanvasController.canvasObjects.push(lblState);
+
+      }
+
+      function createStars(objCanvasController, minimumStars, maximumStars, minStarDistance, maxStarDistance) {
+
+        maximumStars = (!maximumStars || maximumStars < 0 ? 200 : maximumStars);
+        minimumStars = (!minimumStars || minimumStars < 0 || minimumStars > maximumStars ? maximumStars - 1 : minimumStars);
+
+        var initialStarCount = Math.floor((Math.random() * (maximumStars - minimumStars)) + minimumStars);
+        findObjectByName("lblStarCount", objCanvasController.canvasObjects).text = "Star Count: " + initialStarCount;
+
+
+        for (var i = 0; i < initialStarCount; i++) {
+          var minXCreateStar = (borderBufferZone * -1);
+          var maxXCreateStar = (gameDimensions[0] + borderBufferZone);
+          var minYCreateStar = (borderBufferZone * -1);
+          var maxYCreateStar = (gameDimensions[1] + borderBufferZone);
+
+          var starPositionX = Math.floor((Math.random() * (maxXCreateStar - minXCreateStar)) + minXCreateStar);
+          var starPositionY = Math.floor((Math.random() * (maxYCreateStar - minYCreateStar)) + minYCreateStar);
+          var starPositionZ = ((Math.random() * 50) + 0.01);
+          var starSize = ((Math.random() * 2.01) + 0.01);
+          var randomAngle = ((Math.random() * 359) + 0);
+
+           // Workout 3 numbers between 0 and 255, and concatenate them together for the color of a star
+          var starColor = "#" + Math.floor((Math.random() * 255) + 1).toString(16) + Math.floor((Math.random() * 255) + 1).toString(16) + Math.floor((Math.random() * 255) + 1).toString(16);
+
+          var newStar = {
+            "x":starPositionX,
+            "y":starPositionY,
+            "r":starSize,
+            "s":null,
+            "f":null,
+            "shape":"arc",
+            "gameProperties": {
+              "class":"star",
+              "color":starColor,
+              "starSize":starSize,
+              "distance":starPositionZ,
+              "vector": {
+                "angle":randomAngle,
+                "velocity":starPositionZ
+              }
+            },
+            "renderType": function(){ objCanvasController.canvasContext.fill();},
+            "render":function(self) {
+              objCanvasController.drawArc(self.x, self.y, self.r, self.s, self.f, self.renderType, objCanvasController.canvasContext, {"fillStyle":self.gameProperties.color} );
+            },
+            "visible":true
+          }
+
+          objCanvasController.canvasObjects.push(newStar);
+        }
+
+      }
+
+      function updateGame() {
+        // The redraw efficiency could greatly be increased if the list of stars is not calculated each frame and instead calculated once at the start, but this allows for adjusting the amount of stars dynamically if new stars are push to the object list.
+        var gameStars = getGameObject("star", canvasControl.canvasObjects);
+
+        function moveStars(gameStars, ratioAmount) {
+          for (var i = 0; i < gameStars.length; i++) {
+
+            // Workout distance deltas based off time, velocity and angle.
+            var dX = (((Math.cos(gameStars[i].gameProperties.vector.angle * Math.PI / 180) * (gameStars[i].gameProperties.vector.velocity * ratioAmount)) + gameStars[i].x) - gameStars[i].x);
+            var dY = (((Math.sin(gameStars[i].gameProperties.vector.angle * Math.PI / 180) * (gameStars[i].gameProperties.vector.velocity * ratioAmount)) + gameStars[i].y) - gameStars[i].y);
+
+            if (isWarping) {
+              var minXCreateStar = (borderBufferZone * -1);
+              var maxXCreateStar = (gameDimensions[0] + borderBufferZone);
+              var minYCreateStar = (borderBufferZone * -1);
+              var maxYCreateStar = (gameDimensions[1] + borderBufferZone);
+
+              var starPositionX = Math.floor((Math.random() * (maxXCreateStar - minXCreateStar)) + minXCreateStar);
+              var starPositionY = Math.floor((Math.random() * (maxYCreateStar - minYCreateStar)) + minYCreateStar);
+
+              // If the stars go too far outside of the view area.
+              if (gameStars[i].x > gameDimensions[0] + borderBufferZone) {
+                gameStars[i].x = starPositionX;
+                gameStars[i].y = starPositionY;
+              } else if (gameStars[i].x < -borderBufferZone) {
+                gameStars[i].x = starPositionX;
+                gameStars[i].y = starPositionY;
+              } else if (gameStars[i].y < -borderBufferZone) {
+                gameStars[i].x = starPositionX;
+                gameStars[i].y = starPositionY;
+              } else if (gameStars[i].y > gameDimensions[1] + borderBufferZone) {
+                gameStars[i].x = starPositionX;
+                gameStars[i].y = starPositionY;
+              }
+
+              var newStarDistance = Math.sqrt((gameStars[i].x - mouseCoords[0]) * (gameStars[i].x - mouseCoords[0]) + (gameStars[i].y - mouseCoords[1]) * (gameStars[i].y - mouseCoords[1]));
+              var newAngle = ((Math.atan2(mouseCoords[1] - gameStars[i].y, mouseCoords[0] - gameStars[i].x) * 180) / Math.PI);
+
+              // Centre screen warping
+              // var newStarDistance = Math.sqrt((gameStars[i].x - (gameDimensions[0] / 2)) * (gameStars[i].x - (gameDimensions[0] / 2)) + (gameStars[i].y - (gameDimensions[1] / 2)) * (gameStars[i].y - (gameDimensions[1] / 2)));
+              // var newAngle = ((Math.atan2((gameDimensions[1] / 2) - gameStars[i].y, (gameDimensions[0] / 2) - gameStars[i].x) * 180) / Math.PI);
+
+              gameStars[i].gameProperties.vector.velocity = gameStars[i].gameProperties.distance * newStarDistance * 0.02;
+              gameStars[i].gameProperties.vector.angle = newAngle + 180;
+
+            } else {
+
+              // If the stars go too far outside of the view area, warp them back around, and add how far they had moved ontop of the new location.
+              if (gameStars[i].x > gameDimensions[0] + borderBufferZone) {
+                gameStars[i].x = ((borderBufferZone * -1) + dX);
+              } else if (gameStars[i].x < -borderBufferZone) {
+                gameStars[i].x = ((gameDimensions[0] + borderBufferZone) - dX);
+              } else if (gameStars[i].y < -borderBufferZone) {
+                gameStars[i].y = ((gameDimensions[1] + borderBufferZone) - dY);
+              } else if (gameStars[i].y > gameDimensions[1] + borderBufferZone) {
+                gameStars[i].y = ((borderBufferZone * -1) + dY);
+              }
+
+            }
+
+            // Move stars
+            gameStars[i].x += dX;
+            gameStars[i].y += dY;
+
+          }
+        }
+
+        // Workout time and frame stuff for distance calculations.
+        var currentTime = new Date().getTime();
+        var newDistanceRatio = ((currentTime - lastAnimationTime) / 1000);
+
+        moveStars(gameStars, newDistanceRatio);
+
+        canvasControl.refreshScreen(false); // The false is to say that the background is NOT transparent.
+        lastAnimationTime = currentTime;
+
+      }
+
+    </script>
+
+  </head>
+  <body onload="init();">
+    <div class="canvasContainer">
+      Try clicking and moving the mouse, and pressing space bar.<br />
+      <canvas id="canvasDraw" width = "1080px" height = "720px"></canvas>
+    </div>
+  </body>
+</html>
