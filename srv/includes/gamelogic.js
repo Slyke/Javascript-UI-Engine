@@ -50,7 +50,9 @@ var gameLogic = function(includes, settings) {
     includes.apis.updateClientGames(clientGameState); // Push latest frame to clients.
 
     if (gameUpdating) {
-      console.log(Math.round(new Date().getTime()/1000).toString(), " | gameLogic::updateGame(): Warning: Game ticks are overlapping! Slow down the tickrate. (Tick Rate: ", settings.gameTickRate, ", Exec Epoch:", lastExecTime, "). (State:", gameState, ")");
+      if (settings.warnGameTickOverlap) {
+        console.log(Math.round(new Date().getTime()/1000).toString(), " | gameLogic::updateGame(): Warning: Game ticks are attempting to overlap! Slow down the tickrate to avoid skipping. (Tick Rate: ", settings.gameTickRate, ", Exec Epoch:", lastExecTime, "). (State:", gameState, ")");
+      }
       gameUpdating = false;
 
       process.nextTick(function(){ // Give the process time to catch up by skipping a tick.
@@ -195,40 +197,8 @@ var gameLogic = function(includes, settings) {
   this.createSpaceGame = function() {
 
     createStars(gameObjects, settings.game.stars.minimumStars, settings.game.stars.maximumStars);
-    createDataLabels(gameObjects);
 
     includes.apis.createGame(clientGameState);
-
-    function createDataLabels(objectList) {
-      var lblStarCount = {
-        "x":0,
-        "y":0,
-        "name":"lblStarCount",
-        "text":"Star Count: ",
-        "shape":"text",
-        "gameProperties": {
-          "class":"text"
-        },
-        "visible":true
-      };
-
-      var lblState = {
-        "x":0,
-        "y":15,
-        "name":"lblCurrentState",
-        "text":"Current State: Random",
-        "shape":"text",
-        "gameProperties": {
-          "class":"text"
-        },
-        "visible":true
-      }
-
-      objectList.push(lblStarCount);
-      objectList.push(lblState);
-
-    }
-
 
     function createStars(objectList, minimumStars, maximumStars, minStarDistance, maxStarDistance) {
 

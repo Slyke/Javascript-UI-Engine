@@ -10,6 +10,8 @@
 
       var socket = null;
 
+      var isRedrawing = false;
+
       var borderBufferZone = 500;
       var minStars = 2500;
       var maxStars = 4000;
@@ -37,7 +39,7 @@
         screenDimensions = [objCanvas.width, objCanvas.height];
 
         setupSockets();
-
+        setupGame(canvasControl);
         redrawScreen();
 
       }
@@ -70,18 +72,25 @@
 
         socket.on('incomingUpdate', function(payload) {
           if (payload.objGame.gameState === "0") {
-            // console.log(payload.objGame.gameState);
-            var starList = getGameObject("star", payload.objGame.gameObjects);
+            if (!isRedrawing) {
+              isRedrawing = true;
 
-            deleteGameObject("star", canvasControl.canvasObjects);
+              // console.log(payload.objGame.gameState);
+              // console.log(payload.objGame.gameObjects);
+              var starList = getGameObject("star", payload.objGame.gameObjects);
 
-            for (var i = 0; i < starList.length; i++) {
-              (function(star) {
-                createStar(canvasControl, star.x, star.y, star.gameProperties.distance, star.r, star.gameProperties.color, star.gameProperties.size, star.gameProperties.vector.angle, star.gameProperties.vector.velocity);
-              })(starList[i]);
+              deleteGameObject("star", canvasControl.canvasObjects);
+
+              for (var i = 0; i < starList.length; i++) {
+                (function(star) {
+                  createStar(canvasControl, star.x, star.y, star.gameProperties.distance, star.r, star.gameProperties.color, star.gameProperties.size, star.gameProperties.vector.angle, star.gameProperties.vector.velocity);
+                })(starList[i]);
+              }
+
+              findObjectByName("lblStarCount", canvasControl.canvasObjects).text = "Star Count: " + starList.length;
+              isRedrawing = false;
             }
 
-            findObjectByName("lblStarCount", canvasControl.canvasObjects).text = "Star Count: " + starList.length;
           }
 
           // console.log(Math.round(new Date().getTime()/1000).toString(), " | Socket::requestGameACK(): Completed:", payload);
@@ -112,18 +121,7 @@
           // Rerandomize star vectors and sizes
           if (event.keyCode === 32) { //32 is spacebar
             findObjectByName("lblCurrentState", canvasControl.canvasObjects).text = "Current State: Random";
-            var gameStars = getGameObject("star", canvasControl.canvasObjects);
-
-            for (var i = 0; i < gameStars.length; i++) {
-              var starPositionZ = ((Math.random() * 50) + 0.01);
-              var starSize = ((Math.random() * 2.01) + 0.01);
-              var randomAngle = ((Math.random() * 359) + 0);
-
-              gameStars[i].gameProperties.vector.angle = randomAngle;
-              gameStars[i].gameProperties.vector.velocity = starPositionZ;
-              gameStars[i].gameProperties.starSize = starSize;
-              gameStars[i].gameProperties.distance = starPositionZ;
-            }
+            socket.emit('changeState', {"newState":"4"});
           }
         }
       }
@@ -169,8 +167,7 @@
       }
 
       function deleteGameObject(gameClass, objectList) {
-        var filteredObjectList = [];
-        for (objectIndex in objectList) {
+        for (var objectIndex = objectList.length - 1; objectIndex >= 0; objectIndex--) {
           if (objectList[objectIndex].gameProperties.class === gameClass) {
             objectList.splice(objectIndex, 1)
           }

@@ -6,6 +6,7 @@
       "jsonSpaces": 4
   },
   "gameTickRate": 50,
+  "warnGameTickOverlap":false,
   "game": {
     "stars": {
       "minimumStars":500,
