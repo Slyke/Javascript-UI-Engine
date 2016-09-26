@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Asteroids</title>
+    <script src="canvas_ui.js"></script>
+    <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+
+    <script>
+
+      var socket = null;
+
+      var borderBufferZone = 500;
+      var minStars = 2500;
+      var maxStars = 4000;
+
+      var objCanvas = null;
+      var canvasControl = null;
+      var lastAnimationTime = -1;
+      var currentAngle = 0;
+      var isWarping = false;
+      var mouseCoords = [-1, -1];
+      var objlblCurrentState = null;
+
+      var gameDimensions = [0, 0];
+
+      function init() {
+        lastAnimationTime = new Date().getTime();
+        currentAngle = Math.floor((Math.random() * 360) + 0);
+
+        objCanvas = document.getElementById("canvasDraw");
+        canvasControl = new CanvasControl();
+
+        objContext = canvasControl.setupCanvas(objCanvas, null, {backgroundColor:"#000000"});
+
+        setupEventHandlers(objCanvas, canvasControl);
+        gameDimensions = [objCanvas.width, objCanvas.height];
+
+        setupSockets();
+        setupGame(canvasControl);
+        redrawScreen();
+
+      }
+
+      function setupSockets() {
+
+        socket = io();
+        socket.on('test', function(payload) {
+          console.log(Math.round(new Date().getTime()/1000).toString(), " | Socket::test():", payload);
+        });
+
+        socket.on('requestGameACK', function(payload) {
+
+          if (payload.objGame.gameState === "0") {
+            setupGame(canvasControl);
+
+            var starList = getGameObject("star", payload.objGame.gameObjects);
+
+            for (var i = 0; i < starList.length; i++) {
+              (function(star) {
+                createStar(canvasControl, star.x, star.y, star.gameProperties.distance, star.r, star.gameProperties.color, star.gameProperties.size, star.gameProperties.vector.angle, star.gameProperties.vector.velocity);
+              })(starList[i]);
+            }
+
+            findObjectByName("lblStarCount", canvasControl.canvasObjects).text = "Star Count: " + starList.length;
+          }
+
+          console.log(Math.round(new Date().getTime()/1000).toString(), " | Socket::requestGameACK(): Compmleted:", payload);
+        });
+
+        socket.on('incomingUpdate', function(payload) {
+          if (payload.objGame.gameState === "0") {
+
+            // console.log(payload.objGame.gameState);
+            // console.log(payload.objGame.gameObjects);
+            var starList = getGameObject("star", payload.objGame.gameObjects);
+
+            deleteGameObject("star", canvasControl.canvasObjects);
+
+            for (var i = 0; i < starList.length; i++) {
+              (function(star) {
+                createStar(canvasControl, star.x, star.y, star.gameProperties.distance, star.r, star.gameProperties.color, star.gameProperties.size, star.gameProperties.vector.angle, star.gameProperties.vector.velocity);
+              })(starList[i]);
+            }
+
+            findObjectByName("lblStarCount", canvasControl.canvasObjects).text = "Star Count: " + starList.length;
+          }
+
+        });
+
+        socket.on('serverStateTextUpdate', function(payload) {
+            findObjectByName("lblServerStateText", canvasControl.canvasObjects).text = payload.newStateText;
+        });
+
+      }
+
+      function setupEventHandlers(objCanvas, objCanvasController) {
+        objCanvas.addEventListener('click', function(e) { //Add click event listener.
+          objCanvasController.mouseEventHandler(e, "Click");
+        });
+        objCanvas.addEventListener('mousemove', function(e) { //Add mouse move event listener.
+          objCanvasController.mouseEventHandler(e, "Move");
+        });
+        window.addEventListener("keydown", function(e){
+          keyEvents(e, "down");
+        });
+        window.addEventListener("keyup", function(e){
+          keyEvents(e, "up");
+        });
+        window.addEventListener("keypress", function(e){
+          keyEvents(e, "press");
+        });
+      }
+
+      function keyEvents(event, eventType) {
+        if (eventType === "press") {
+          // Rerandomize star vectors and sizes
+          if (event.keyCode === 32) { //32 is spacebar
+            findObjectByName("lblCurrentState", canvasControl.canvasObjects).text = "Current State: Random";
+            socket.emit('changeState', {"newState":"4"});
+          }
+        }
+      }
+
+      function setupGame(objCanvasController) {
+        objCanvasController.canvasObjects = [];
+
+        createBackground(objCanvasController);
+        createDataText(objCanvasController);
+        // createStars(objCanvasController, minStars, maxStars);
+      }
+
+      function findObjectByName(name, objectList) {
+
+        for (objectIndex in objectList) {
+          if (objectList[objectIndex].name ===  name) {
+            return objectList[objectIndex];
+          }
+        }
+
+        return false;
+
+      }
+
+      function redrawScreen() {
+        requestAnimationFrame(redrawScreen);
+
+        updateGame();
+
+      }
+
+      function getGameObject(gameClass, objectList) {
+        var filteredObjectList = [];
+        for (objectIndex in objectList) {
+          if (objectList[objectIndex].gameProperties.class === gameClass) {
+            (function(objectToAdd){
+              filteredObjectList.push(objectToAdd);
+            })(objectList[objectIndex]);
+          }
+        }
+
+        return filteredObjectList;
+      }
+
+      function deleteGameObject(gameClass, objectList) {
+        for (var objectIndex = objectList.length - 1; objectIndex >= 0; objectIndex--) {
+          if (objectList[objectIndex].gameProperties.class === gameClass) {
+            objectList.splice(objectIndex, 1)
+          }
+        }
+
+        return true;
+      }
+
+      function createBackground(objCanvasController) {
+        var blackBackgroundObject = { // This is so we can track the mouse position
+          "x":0,
+          "y":0,
+          "w":gameDimensions[0],
+          "h":gameDimensions[1],
+          "shape":"rect",
+          "gameProperties": {
+            "class":"background"
+          },
+          "render":function(self) {
+            objCanvasController.drawRect(self.x, self.y, self.w, self.h);
+          },
+          "clickEvent":function(x, y, self) {
+            isWarping = !isWarping;
+            if (isWarping) {
+              findObjectByName("lblCurrentState", objCanvasController.canvasObjects).text = "Current State: Warping";
+              var gameStars = getGameObject("star", canvasControl.canvasObjects);
+              for (var i = 0; i < gameStars.length; i++) {
+                mouseCoords = [x, y];
+
+                var newAngle = ((Math.atan2(mouseCoords[1] - gameStars[i].y, mouseCoords[0] - gameStars[i].x) * 180) / Math.PI);
+                var newDistance = Math.sqrt((gameStars[i].x - mouseCoords[0]) * (gameStars[i].x - mouseCoords[0]) + (gameStars[i].y - mouseCoords[1]) * (gameStars[i].y - mouseCoords[1]));
+
+                // Centre screen warping
+                // var newAngle = ((Math.sqrt((gameStars[i].x - (gameDimensions[0] / 2)) * (gameStars[i].x - (gameDimensions[0] / 2)) + (gameStars[i].y - (gameDimensions[1] / 2)) * (gameStars[i].y - (gameDimensions[1] / 2)));
+
+                gameStars[i].gameProperties.vector.angle = newAngle;
+                gameStars[i].gameProperties.vector.velocity = gameStars[i].gameProperties.distance * newDistance * 0.02;
+
+              }
+
+            } else {
+              findObjectByName("lblCurrentState", objCanvasController.canvasObjects).text = "Current State: Moving";
+            }
+
+          },
+          "moveEvent":function(x, y, self) { //Consider moving this into something that is sent at most once per frame so it doesn't cause massive lag on both the client, server, and network.
+
+            //Server uses a 1000x1000 game dimension scale, so convert the coordinates to that.
+            var scaleGame = [0, 0];
+            scaleGame[0] = ((x / gameDimensions[0]) * 1000);
+            scaleGame[1] = ((y / gameDimensions[1]) * 1000);
+
+            socket.emit('mouseMove', {"coords":[scaleGame[0], scaleGame[1]]});
+          },
+          "visible":false
+        }
+
+        objCanvasController.canvasObjects.push(blackBackgroundObject);
+
+      }
+
+      function createDataText(objCanvasController) {
+        var lblStarCount = {
+          "x":0,
+          "y":0,
+          "name":"lblStarCount",
+          "text":"Star Count: ",
+          "shape":"text",
+          "gameProperties": {
+            "class":"text"
+          },
+          "render":function(self) {
+            objCanvasController.drawText(self.x, self.y, self.text, self, null, null, {"fillStyle":"#99FF00"});
+          },
+          "visible":true
+        };
+
+        var lblServerState = {
+          "x":0,
+          "y":30,
+          "name":"lblServerStateText",
+          "text":"",
+          "shape":"text",
+          "gameProperties": {
+            "class":"text"
+          },
+          "render":function(self) {
+            objCanvasController.drawText(self.x, self.y, self.text, self, null, null, {"fillStyle":"#99FF00"});
+          },
+          "visible":true
+        };
+
+        var lblState = {
+          "x":0,
+          "y":15,
+          "name":"lblCurrentState",
+          "text":"Current State: Unknown",
+          "shape":"text",
+          "gameProperties": {
+            "class":"text"
+          },
+          "render":function(self) {
+            objCanvasController.drawText(self.x, self.y, self.text, self, null, null, {"fillStyle":"#99FF00"});
+          },
+          "visible":true
+        }
+        objlblCurrentState = lblState;
+        objCanvasController.canvasObjects.push(lblStarCount);
+        objCanvasController.canvasObjects.push(lblServerState);
+        objCanvasController.canvasObjects.push(lblState);
+
+      }
+
+      function createStar(objCanvasController, x, y, z, r, c, s, a, z) {
+        var newStar = {
+          "x":x,
+          "y":y,
+          "r":r,
+          "s":null,
+          "f":null,
+          "shape":"arc",
+          "gameProperties": {
+            "class":"star",
+            "color":c,
+            "starSize":s,
+            "distance":z,
+            "vector": {
+              "angle":a,
+              "velocity":z
+            }
+          },
+          "renderType": function(){ objCanvasController.canvasContext.fill();},
+          "render":function(self) {
+            objCanvasController.drawArc(self.x, self.y, self.r, self.s, self.f, self.renderType, objCanvasController.canvasContext, {"fillStyle":self.gameProperties.color} );
+          },
+          "visible":true
+        }
+
+        objCanvasController.canvasObjects.push(newStar);
+      }
+
+      function updateGame() {
+        // The redraw efficiency could greatly be increased if the list of stars is not calculated each frame and instead calculated once at the start, but this allows for adjusting the amount of stars dynamically if new stars are push to the object list.
+        // var gameStars = getGameObject("star", canvasControl.canvasObjects);
+
+        // Workout time and frame stuff for distance calculations.
+        var currentTime = new Date().getTime();
+        var newDistanceRatio = ((currentTime - lastAnimationTime) / 1000);
+
+        canvasControl.refreshScreen(false); // The false is to say that the background is NOT transparent.
+        lastAnimationTime = currentTime;
+
+      }
+
+    </script>
+
+  </head>
+  <body onload="init();">
+    <div class="canvasContainer">
+      Try clicking and moving the mouse, and pressing space bar.<br />
+      <canvas id="canvasDraw" width = "1080px" height = "720px"></canvas>
+    </div>
+  </body>
+</html>

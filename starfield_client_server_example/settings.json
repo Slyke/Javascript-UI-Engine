@@ -1,0 +1,23 @@
+{
+  "servingAppsPath": "apps/",
+  "servePort": 3001,
+  "monitorSettingsFile":true,
+  "outputs": {
+      "jsonSpaces": 4
+  },
+  "gameTickRate": 50,
+  "warnGameTickOverlap":false,
+  "game": {
+    "stars": {
+      "minimumStars":500,
+      "maximumStars":501
+    },
+    "borderBufferZone":500,
+    "worldSize":[1440, 1080]
+  },
+  "apps": {
+    "space": {
+      "useRouter" : true
+    }
+  }
+}
