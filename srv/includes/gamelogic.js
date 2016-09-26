@@ -12,6 +12,8 @@ var gameLogic = function(includes, settings) {
   var gameLastUpdate = -1;
   var lastExecTime = 0;
 
+  var virtualGameDimensions = [1000, 1000];
+
   var clientGameState = {};
 
   this.init = function() {
@@ -40,6 +42,41 @@ var gameLogic = function(includes, settings) {
     pausedState = (pausedState == null || pausedState === undefined ? false : pausedState);
     pausedState = gamePaused;
     console.log(Math.round(new Date().getTime()/1000).toString(), " | gameLogic::changeGamePauseState(): Pause State Change:", pausedState);
+  };
+
+  this.updateMousePosition = function(x, y) {
+    var gameStars = includes.gameLogic.getGameObject("star", gameObjects);
+
+    var newSpeed = Math.sqrt((x - (virtualGameDimensions[0] / 2)) * (x - (virtualGameDimensions[0] / 2)) + (y - (virtualGameDimensions[1] / 2)) * (y - (virtualGameDimensions[1] / 2)));
+    var newAngle = ((Math.atan2((virtualGameDimensions[1] / 2) - y, (virtualGameDimensions[0] / 2) - x) * 180) / Math.PI);
+
+    for (var i = 0; i < gameStars.length; i++) {
+      var newStarDistance = Math.sqrt((gameStars[i].x - x) * (gameStars[i].x - x) + (gameStars[i].y - y) * (gameStars[i].y - y));
+
+      if (false) { // if (isWarping) {}
+
+      } else {
+        gameStars[i].gameProperties.vector.angle = newAngle;
+        gameStars[i].gameProperties.vector.velocity = gameStars[i].gameProperties.distance * newSpeed * 0.02;
+        // We have to use objlblCurrentState since using the findObjectByName function is expensive when cycling through many stars every mousemove (it WILL lag your screen).
+
+        includes.apis.updateServerStateText("Current Server State: Moving - Heading: " + Math.round(newAngle + 180, 0) + "  - Speed: " + Math.round(newSpeed, 0));
+      }
+    }
+  };
+
+
+  this.getGameObject = function(gameClass, objectList) {
+    var filteredObjectList = [];
+    for (objectIndex in objectList) {
+      if (objectList[objectIndex].gameProperties.class === gameClass) {
+        (function(objectToAdd){
+          filteredObjectList.push(objectToAdd);
+        })(objectList[objectIndex]);
+      }
+    }
+
+    return filteredObjectList;
   };
 
   this.updateGame = function() {
@@ -83,7 +120,7 @@ var gameLogic = function(includes, settings) {
 
       function updatePhysics() {
         // The redraw efficiency could greatly be increased if the list of stars is not calculated each frame and instead calculated once at the start, but this allows for adjusting the amount of stars dynamically if new stars are push to the object list.
-        var gameStars = getGameObject("star", gameObjects);
+        var gameStars = includes.gameLogic.getGameObject("star", gameObjects);
 
         function moveStars(gameStars, ratioAmount) {
           for (var i = 0; i < gameStars.length; i++) {
@@ -153,19 +190,6 @@ var gameLogic = function(includes, settings) {
 
         moveStars(gameStars, newDistanceRatio);
 
-      }
-
-      function getGameObject(gameClass, objectList) {
-        var filteredObjectList = [];
-        for (objectIndex in objectList) {
-          if (objectList[objectIndex].gameProperties.class === gameClass) {
-            (function(objectToAdd){
-              filteredObjectList.push(objectToAdd);
-            })(objectList[objectIndex]);
-          }
-        }
-
-        return filteredObjectList;
       }
 
       updatePhysics();

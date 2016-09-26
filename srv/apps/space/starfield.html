@@ -34,7 +34,7 @@
         objContext = canvasControl.setupCanvas(objCanvas, null, {backgroundColor:"#000000"});
 
         setupEventHandlers(objCanvas, canvasControl);
-        screenDimensions = [objCanvas.width, objCanvas.height];
+        gameDimensions = [objCanvas.width, objCanvas.height];
 
         setupSockets();
         setupGame(canvasControl);
@@ -86,7 +86,10 @@
             findObjectByName("lblStarCount", canvasControl.canvasObjects).text = "Star Count: " + starList.length;
           }
 
-          // console.log(Math.round(new Date().getTime()/1000).toString(), " | Socket::requestGameACK(): Completed:", payload);
+        });
+
+        socket.on('serverStateTextUpdate', function(payload) {
+            findObjectByName("lblServerStateText", canvasControl.canvasObjects).text = payload.newStateText;
         });
 
       }
@@ -206,24 +209,14 @@
             }
 
           },
-          "moveEvent":function(x, y, self) {
-            var gameStars = getGameObject("star", canvasControl.canvasObjects);
+          "moveEvent":function(x, y, self) { //Consider moving this into something that is sent at most once per frame so it doesn't cause massive lag on both the client, server, and network.
 
-            var newSpeed = Math.sqrt((x - (gameDimensions[0] / 2)) * (x - (gameDimensions[0] / 2)) + (y - (gameDimensions[1] / 2)) * (y - (gameDimensions[1] / 2)));
-            var newAngle = ((Math.atan2((gameDimensions[1] / 2) - y, (gameDimensions[0] / 2) - x) * 180) / Math.PI);
+            //Server uses a 1000x1000 game dimension scale, so convert the coordinates to that.
+            var scaleGame = [0, 0];
+            scaleGame[0] = ((x / gameDimensions[0]) * 1000);
+            scaleGame[1] = ((y / gameDimensions[1]) * 1000);
 
-            for (var i = 0; i < gameStars.length; i++) {
-              var newStarDistance = Math.sqrt((gameStars[i].x - x) * (gameStars[i].x - x) + (gameStars[i].y - y) * (gameStars[i].y - y));
-
-              if (isWarping) {
-
-              } else {
-                gameStars[i].gameProperties.vector.angle = newAngle;
-                gameStars[i].gameProperties.vector.velocity = gameStars[i].gameProperties.distance * newSpeed * 0.02;
-                // We have to use objlblCurrentState since using the findObjectByName function is expensive when cycling through many stars every mousemove (it WILL lag your screen).
-                objlblCurrentState.text = "Current State: Moving - Heading: " + Math.round(newAngle + 180, 0) + "  - Speed: " + Math.round(newSpeed, 0);
-              }
-            }
+            socket.emit('mouseMove', {"coords":[scaleGame[0], scaleGame[1]]});
           },
           "visible":false
         }
@@ -238,6 +231,21 @@
           "y":0,
           "name":"lblStarCount",
           "text":"Star Count: ",
+          "shape":"text",
+          "gameProperties": {
+            "class":"text"
+          },
+          "render":function(self) {
+            objCanvasController.drawText(self.x, self.y, self.text, self, null, null, {"fillStyle":"#99FF00"});
+          },
+          "visible":true
+        };
+
+        var lblServerState = {
+          "x":0,
+          "y":30,
+          "name":"lblServerStateText",
+          "text":"",
           "shape":"text",
           "gameProperties": {
             "class":"text"
@@ -264,6 +272,7 @@
         }
         objlblCurrentState = lblState;
         objCanvasController.canvasObjects.push(lblStarCount);
+        objCanvasController.canvasObjects.push(lblServerState);
         objCanvasController.canvasObjects.push(lblState);
 
       }

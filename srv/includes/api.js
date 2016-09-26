@@ -121,6 +121,10 @@ var endPoints = function(includes, settings) {
         settings = includes.settingsController.readSettings("settings.json");
       });
 
+      socket.on('mouseMove', function(payload) {
+        includes.gameLogic.updateMousePosition(payload.coords[0], payload.coords[1]);
+      });
+
     });
 
     console.log(Math.round(new Date().getTime()/1000).toString(), " | endPoints::initSockets()");
@@ -136,6 +140,12 @@ var endPoints = function(includes, settings) {
   this.updateClientGames = function(payload) {
     includes.io.emit('incomingUpdate', {
       "objGame" : includes.gameLogic.getGameState()
+    });
+  };
+
+  this.updateServerStateText = function(payload) {
+    includes.io.emit('serverStateTextUpdate', {
+      "newStateText" : payload
     });
   };
 

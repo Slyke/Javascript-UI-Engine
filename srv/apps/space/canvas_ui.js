@@ -3,7 +3,7 @@
   Email: steven.lawler777@gmail.com
   Creation Date: 21/09/2014
   URL: https://github.com/Slyke/Javascript-UI-Engine
-  Version: 1.5a
+  Version: 1.6a
   Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
   Example Usage:
@@ -78,6 +78,12 @@ var CanvasControl = function() {
   this.canvasObjects = [];
 
   Math.TAU = (2 * Math.PI); //Add in Tau compatibility
+
+  // Set the debug state from outside.
+  this.setDebugState = function (newState) {
+    debugConsole = newState;
+    return true;
+  }
 
   /*
     setupCanvas() sets up the canvas area for drawing.
