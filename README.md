@@ -11,7 +11,7 @@ Feel free to use this library and if you find any bugs please let me know and I 
 ##Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
 
-  ##Example Usage:
+##Example Usage:
 ```
       var canvasControl = new CanvasControl(); //Create the class
       var c = document.getElementById("canvasDraw"); //Get the canvas as an object.
