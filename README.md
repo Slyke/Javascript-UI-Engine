@@ -8,11 +8,11 @@ Feel free to use this library and if you find any bugs please let me know and I 
   URL: https://github.com/Slyke/Javascript-UI-Engine
   Version: 1.6a
 
-  ##Description:
+##Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
 
   ##Example Usage:
-    ```
+```
       var canvasControl = new CanvasControl(); //Create the class
       var c = document.getElementById("canvasDraw"); //Get the canvas as an object.
       objCanvas = canvasControl.setupCanvas(c); //Setup the canvas for drawing.
@@ -41,11 +41,11 @@ Feel free to use this library and if you find any bugs please let me know and I 
       }
       canvasControl.canvasObjects.push(newSquare); //Add object to object list
       canvasControl.refreshScreen(); //Redraw screen.
-    ```
+```
 
 Checkout the examples folder for more.
 
-    ##License:
+##License:
     The MIT License (MIT)
 
       Copyright (c) 2014 Steven Lawler (Slyke)
