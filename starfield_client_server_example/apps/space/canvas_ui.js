@@ -3,7 +3,7 @@
   Email: steven.lawler777@gmail.com
   Creation Date: 21/09/2014
   URL: https://github.com/Slyke/Javascript-UI-Engine
-  Version: 1.6a
+  Version: 1.7a
   Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
   Example Usage:
@@ -69,7 +69,7 @@ var CanvasControl = function() {
     "backgroundColor":"#000000"
   };
 
-  var debugConsole      = 0; //Setting to 4096 turns on all debug messages for all functions. 1023 for all but mouse events.
+  var debugConsole      = 0; //Setting to 4096 turns on all debug messages for all functions. 1023 for all but mouse events. You can set this at runtime using the debug object functions.
   this.defaultColor     = "#000000";
   this.defaultLineWidth = "1";
 
@@ -79,11 +79,45 @@ var CanvasControl = function() {
 
   Math.TAU = (2 * Math.PI); //Add in Tau compatibility
 
-  // Set the debug state from outside.
-  this.setDebugState = function (newState) {
-    debugConsole = newState;
-    return true;
-  }
+  // Debug functions
+  this.debug = {
+    "_version": function() { return "1.7a"; }(),
+
+    // Set the debug state from outside.
+    "setLevel": function (newLevel) {
+      debugConsole = newLevel;
+      return true;
+    },
+
+    "getLevel": function () {
+      return debugConsole;
+    },
+
+    // Toggle a specific debug option
+    "toggle": function(toggleOption) {
+
+      var optionInt = getToggleConst[toggleOption];
+
+      if (optionInt > -1) {
+        debugConsole = (debugConsole & getToggleConst[toggleOption] ? (debugConsole - getToggleConst[toggleOption]) : (debugConsole + getToggleConst[toggleOption]));
+      }
+    },
+
+    "getToggleConst": {
+      "setupCanvas":1,
+      "renderObjects":2,
+      "drawRect":4,
+      "drawText":8,
+      "drawArc":16,
+      "drawLine":32,
+      "drawPolygon":64,
+      "drawImage":128,
+      "clearCanvas":256,
+      "refreshScreen":512,
+      "mouseEventHandler":1024,
+      "checkMouseCollision":2048
+    }
+  };
 
   /*
     setupCanvas() sets up the canvas area for drawing.
@@ -170,38 +204,38 @@ var CanvasControl = function() {
       The context is optional and is what it will be drawing to. If it's null, or not specified, it will use the one from the class.
       Style is another optional parameter that allows the fill color, the font, text base line, max width and the text stroke color to be specified.
     // */
-    this.drawText = function (x, y, text, self, renderText, context, style) {
-      context = (context === undefined || context == null ? this.canvasContext : context);
-      x = (x === undefined || x == null || x == "" ? 0 : x);
-      y = (y === undefined || y == null || y == "" ? 0 : y);
-      self.w = (self.w === undefined || self.w == null || self.w == "" ? context.measureText(text).width : self.w);
-      self.h = (self.h === undefined || self.h == null || self.h == "" ? context.measureText(text).height : self.h);
-      originalFillStyle = context.fillStyle;
-      originalStrokeStyle = context.strokeStyle;
-      if (style !== undefined && style != null) {
-        context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
-        context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
-        style.textBaseline = (style.textBaseline === undefined ? "hanging" : style.textBaseline);
-        style.font = (style.font === undefined ? "" : style.font);
-        style.maxWidth = (style.maxWidth === undefined ? null : style.maxWidth);
-      } else {
-        style = {};
-      }
-      renderText = (renderText === undefined || renderText == null ? function(x, y, text, maxWidth){ context.fillText(text, x, y); } : renderText);
-      if (style !== undefined && style != null) {
-        context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
-        context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
-        context.textBaseline = (style.textBaseline === undefined ? context.textBaseline : style.textBaseline);
-        context.font = (style.font === undefined ? context.font : style.font);
-        style.maxWidth = (style.maxWidth === undefined ? context.maxWidth : style.maxWidth);
-      }
-      context.beginPath();
-      renderText(x, y, text, style.maxWidth);
-      context.closePath();
-      context.fillStyle = originalFillStyle;
-      context.strokeStyle = originalStrokeStyle;
-      if (debugConsole & 8) {console.log("[8]: drawText(x, y, text, renderText, context, style): ", x, y, text, renderText, context, style);}
-    };
+  this.drawText = function (x, y, text, self, renderText, context, style) {
+    context = (context === undefined || context == null ? this.canvasContext : context);
+    x = (x === undefined || x == null || x == "" ? 0 : x);
+    y = (y === undefined || y == null || y == "" ? 0 : y);
+    self.w = (self.w === undefined || self.w == null || self.w == "" ? context.measureText(text).width : self.w);
+    self.h = (self.h === undefined || self.h == null || self.h == "" ? context.measureText(text).height : self.h);
+    originalFillStyle = context.fillStyle;
+    originalStrokeStyle = context.strokeStyle;
+    if (style !== undefined && style != null) {
+      context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
+      context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
+      style.textBaseline = (style.textBaseline === undefined ? "hanging" : style.textBaseline);
+      style.font = (style.font === undefined ? "" : style.font);
+      style.maxWidth = (style.maxWidth === undefined ? null : style.maxWidth);
+    } else {
+      style = {};
+    }
+    renderText = (renderText === undefined || renderText == null ? function(x, y, text, maxWidth){ context.fillText(text, x, y); } : renderText);
+    if (style !== undefined && style != null) {
+      context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
+      context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
+      context.textBaseline = (style.textBaseline === undefined ? context.textBaseline : style.textBaseline);
+      context.font = (style.font === undefined ? context.font : style.font);
+      style.maxWidth = (style.maxWidth === undefined ? context.maxWidth : style.maxWidth);
+    }
+    context.beginPath();
+    renderText(x, y, text, style.maxWidth);
+    context.closePath();
+    context.fillStyle = originalFillStyle;
+    context.strokeStyle = originalStrokeStyle;
+    if (debugConsole & 8) {console.log("[8]: drawText(x, y, text, renderText, context, style): ", x, y, text, renderText, context, style);}
+  };
 
   /*
     drawArc() will draw an arc to the canvas. Tau (2 * PI) will draw a full circle.
@@ -334,19 +368,35 @@ var CanvasControl = function() {
       Note:
         If a width and height is not specified in the image object, then the mouse events will not fire.
     // */
-    this.drawImage = function (srcImage, x, y, w, h, sx, sy, sw, sh, context) {
-      context = (context === undefined || context == null ? this.canvasContext : context);
-      x = (x === undefined || x == null || x == "" ? 0 : x);
-      y = (y === undefined || y == null || y == "" ? 0 : y);
-      w = (w === undefined ? srcImage.width : w);
-      h = (h === undefined ? srcImage.height : h);
-      sx = (h === undefined ? null : sx);
-      sy = (h === undefined ? null : sy);
-      sw = (h === undefined ? null : sw);
-      sh = (h === undefined ? null : sh);
-      originalFillStyle = context.fillStyle;
+  this.drawImage = function (srcImage, x, y, w, h, sx, sy, sw, sh, context) {
+    context = (context === undefined || context == null ? this.canvasContext : context);
+    x = (x === undefined || x == null || x == "" ? 0 : x);
+    y = (y === undefined || y == null || y == "" ? 0 : y);
+    w = (w === undefined ? srcImage.width : w);
+    h = (h === undefined ? srcImage.height : h);
+    sx = (h === undefined ? null : sx);
+    sy = (h === undefined ? null : sy);
+    sw = (h === undefined ? null : sw);
+    sh = (h === undefined ? null : sh);
+    originalFillStyle = context.fillStyle;
 
-      if (srcImage.objImage) {
+    if (srcImage.objImage) {
+      srcImage.w = (srcImage.w < 0 ? srcImage.objImage.width : srcImage.w);
+      srcImage.h = (srcImage.h < 0 ? srcImage.objImage.height : srcImage.h);
+      context.beginPath();
+      if (sx == null || sy == null || sw == null || sh == null || sx == 0 || sy == 0 || sw == 0 || sh == 0) {
+        if (w < 0 || h < 0) {
+          context.drawImage(srcImage.objImage, x, y);
+        } else {
+          context.drawImage(srcImage.objImage, x, y, w, h);
+        }
+      } else {
+        context.drawImage(srcImage.objImage, sx, sy, sw, sh, x, y, w, h);
+      }
+      context.closePath();
+
+      srcImage.onload = function() {
+        srcImage.hasLoaded = true;
         srcImage.w = (srcImage.w < 0 ? srcImage.objImage.width : srcImage.w);
         srcImage.h = (srcImage.h < 0 ? srcImage.objImage.height : srcImage.h);
         context.beginPath();
@@ -359,30 +409,14 @@ var CanvasControl = function() {
         } else {
           context.drawImage(srcImage.objImage, sx, sy, sw, sh, x, y, w, h);
         }
+
         context.closePath();
+      };
+    }
 
-        srcImage.onload = function() {
-          srcImage.hasLoaded = true;
-          srcImage.w = (srcImage.w < 0 ? srcImage.objImage.width : srcImage.w);
-          srcImage.h = (srcImage.h < 0 ? srcImage.objImage.height : srcImage.h);
-          context.beginPath();
-          if (sx == null || sy == null || sw == null || sh == null || sx == 0 || sy == 0 || sw == 0 || sh == 0) {
-            if (w < 0 || h < 0) {
-              context.drawImage(srcImage.objImage, x, y);
-            } else {
-              context.drawImage(srcImage.objImage, x, y, w, h);
-            }
-          } else {
-            context.drawImage(srcImage.objImage, sx, sy, sw, sh, x, y, w, h);
-          }
-
-          context.closePath();
-        };
-      }
-
-      context.fillStyle = originalFillStyle;
-      if (debugConsole & 128) {console.log("[128]: drawImage(srcImage, x, y, w, h, sx, sy, sw, sh, context): ", srcImage, x, y, w, h, sx, sy, sw, sh, context);}
-    };
+    context.fillStyle = originalFillStyle;
+    if (debugConsole & 128) {console.log("[128]: drawImage(srcImage, x, y, w, h, sx, sy, sw, sh, context): ", srcImage, x, y, w, h, sx, sy, sw, sh, context);}
+  };
 
   /*
     clearCanvas() will draw over the entire canvas with a specified color.
