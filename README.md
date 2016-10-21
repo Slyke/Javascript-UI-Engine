@@ -8,7 +8,9 @@ Feel free to use this library and if you find any bugs please let me know and I 
 
   URL: https://github.com/Slyke/Javascript-UI-Engine
 
-  Version: `1.6a`
+  NPM: `npm install js-ui-engine`
+
+  Version: `1.7.1`
 
 ##Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
