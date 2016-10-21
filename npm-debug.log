@@ -1,0 +1,100 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'D:\\Program Files\\nodejs\\node.exe',
+1 verbose cli   'D:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js',
+1 verbose cli   'publish' ]
+2 info using npm@2.14.7
+3 info using node@v4.2.2
+4 verbose publish [ '.' ]
+5 silly cache add args [ '.', null ]
+6 verbose cache add spec .
+7 silly cache add parsed spec Result {
+7 silly cache add   raw: '.',
+7 silly cache add   scope: null,
+7 silly cache add   name: null,
+7 silly cache add   rawSpec: '.',
+7 silly cache add   spec: 'C:\\Users\\Slyke\\Desktop\\Javascript-UI-Engine',
+7 silly cache add   type: 'directory' }
+8 verbose addLocalDirectory C:\Users\Slyke\AppData\Roaming\npm-cache\js-ui-engine\1.7.1\package.tgz not in flight; packing
+9 verbose tar pack [ 'C:\\Users\\Slyke\\AppData\\Roaming\\npm-cache\\js-ui-engine\\1.7.1\\package.tgz',
+9 verbose tar pack   'C:\\Users\\Slyke\\Desktop\\Javascript-UI-Engine' ]
+10 verbose tarball C:\Users\Slyke\AppData\Roaming\npm-cache\js-ui-engine\1.7.1\package.tgz
+11 verbose folder C:\Users\Slyke\Desktop\Javascript-UI-Engine
+12 info prepublish js-ui-engine@1.7.1
+13 verbose addLocalTarball adding from inside cache C:\Users\Slyke\AppData\Roaming\npm-cache\js-ui-engine\1.7.1\package.tgz
+14 silly cache afterAdd js-ui-engine@1.7.1
+15 verbose afterAdd C:\Users\Slyke\AppData\Roaming\npm-cache\js-ui-engine\1.7.1\package\package.json not in flight; writing
+16 verbose afterAdd C:\Users\Slyke\AppData\Roaming\npm-cache\js-ui-engine\1.7.1\package\package.json written
+17 silly publish { name: 'js-ui-engine',
+17 silly publish   version: '1.7.1',
+17 silly publish   description: 'Javascript UI Engine',
+17 silly publish   main: 'src/canvas_ui.min.js.js',
+17 silly publish   repository:
+17 silly publish    { type: 'git',
+17 silly publish      url: 'git+https://github.com/Slyke/Javascript-UI-Engine.git' },
+17 silly publish   author: { name: 'Slyke' },
+17 silly publish   contributors:
+17 silly publish    [ { name: 'Steven Lawler',
+17 silly publish        email: 'steven.lawler777@gmail.com',
+17 silly publish        url: 'Slyke' } ],
+17 silly publish   license: 'MIT',
+17 silly publish   dependencies: {},
+17 silly publish   readme: '# Javascript-UI-Engine\n\nThis was just a simple Javascript library I put together for myself to help make the HTML5 Canvas use objects so that it can be somewhat event driven.\n\nFeel free to use this library and if you find any bugs please let me know and I will fix them.\n\n  Creation Date: 21/09/2014\n\n  URL: https://github.com/Slyke/Javascript-UI-Engine\n\n  NPM: `npm install js-ui-engine`\n\n  Version: `1.7.1`\n\n##Description:\n    This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.\n\n##Example Usage:\n```\n      var canvasControl = new CanvasControl(); //Create the class\n      var c = document.getElementById("canvasDraw"); //Get the canvas as an object.\n      objCanvas = canvasControl.setupCanvas(c); //Setup the canvas for drawing.\n      c.addEventListener(\'click\', function(e) { //Add click event listener.\n        canvasControl.mouseEventHandler(e, "Click");\n      });\n      c.addEventListener(\'mousemove\', function(e) { //Add mouse move event listener.\n        canvasControl.mouseEventHandler(e, "Move");\n      });\n      var newSquare = { //Create a new object\n        "x":50,\n        "y":50,\n        "w":250,\n        "h":250,\n        "shape":"rect", //This lets the click and mouse move handler know what type of object it is.\n        "render":function(self) {\n          canvasControl.drawRect(self.x, self.y, self.w, self.h);\n        },\n        "clickEvent":function(x, y, self) {\n          console.log(x, y, self, "click");\n        },\n        "moveEvent":function(x, y, self) {\n          console.log(x, y, self, "move");\n        },\n        "visible":true\n      }\n      canvasControl.canvasObjects.push(newSquare); //Add object to object list\n      canvasControl.refreshScreen(); //Redraw screen.\n```\n\nCheckout the examples folder for more.\n\n##License:\n    The MIT License (MIT)\n\n      Copyright (c) 2014 Steven Lawler (Slyke)\n\n      Permission is hereby granted, free of charge, to any person obtaining a copy\n      of this software and associated documentation files (the "Software"), to deal\n      in the Software without restriction, including without limitation the rights\n      to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n      copies of the Software, and to permit persons to whom the Software is\n      furnished to do so, subject to the following conditions:\n\n      The above copyright notice and this permission notice shall be included in\n      all copies or substantial portions of the Software.\n\n      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n      IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n      FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n      AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n      LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n      OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n      THE SOFTWARE.\n',
+17 silly publish   readmeFilename: 'README.md',
+17 silly publish   gitHead: 'b64f904a97e9774e5a28ca1ae4377400000236c0',
+17 silly publish   bugs: { url: 'https://github.com/Slyke/Javascript-UI-Engine/issues' },
+17 silly publish   homepage: 'https://github.com/Slyke/Javascript-UI-Engine#readme',
+17 silly publish   _id: 'js-ui-engine@1.7.1',
+17 silly publish   scripts: {},
+17 silly publish   _shasum: '7614cc0eb34b77786cdae6473b225fc604170379',
+17 silly publish   _from: '.' }
+18 verbose getPublishConfig undefined
+19 silly mapToRegistry name js-ui-engine
+20 silly mapToRegistry using default registry
+21 silly mapToRegistry registry https://registry.npmjs.org/
+22 silly mapToRegistry uri https://registry.npmjs.org/js-ui-engine
+23 verbose publish registryBase https://registry.npmjs.org/
+24 silly publish uploading C:\Users\Slyke\AppData\Roaming\npm-cache\js-ui-engine\1.7.1\package.tgz
+25 verbose request uri https://registry.npmjs.org/js-ui-engine
+26 verbose request sending authorization for write operation
+27 info attempt registry request try #1 at 12:09:27 AM
+28 verbose request using bearer token for auth
+29 verbose request id afdd2e34f8a0dfe8
+30 http request PUT https://registry.npmjs.org/js-ui-engine
+31 http 403 https://registry.npmjs.org/js-ui-engine
+32 verbose headers { 'content-type': 'application/json',
+32 verbose headers   'cache-control': 'max-age=300',
+32 verbose headers   'content-length': '95',
+32 verbose headers   'accept-ranges': 'bytes',
+32 verbose headers   date: 'Fri, 21 Oct 2016 04:09:30 GMT',
+32 verbose headers   via: '1.1 varnish',
+32 verbose headers   connection: 'keep-alive',
+32 verbose headers   'x-served-by': 'cache-ord1744-ORD',
+32 verbose headers   'x-cache': 'MISS',
+32 verbose headers   'x-cache-hits': '0',
+32 verbose headers   'x-timer': 'S1477022969.768058,VS0,VE963',
+32 verbose headers   vary: 'Accept-Encoding' }
+33 verbose request invalidating C:\Users\Slyke\AppData\Roaming\npm-cache\registry.npmjs.org\js-ui-engine on PUT
+34 error publish Failed PUT 403
+35 verbose stack Error: "You cannot publish over the previously published version 1.7.1." : js-ui-engine
+35 verbose stack     at makeError (D:\Program Files\nodejs\node_modules\npm\node_modules\npm-registry-client\lib\request.js:264:12)
+35 verbose stack     at CachingRegistryClient.<anonymous> (D:\Program Files\nodejs\node_modules\npm\node_modules\npm-registry-client\lib\request.js:252:14)
+35 verbose stack     at Request._callback (D:\Program Files\nodejs\node_modules\npm\node_modules\npm-registry-client\lib\request.js:172:14)
+35 verbose stack     at Request.self.callback (D:\Program Files\nodejs\node_modules\npm\node_modules\request\request.js:198:22)
+35 verbose stack     at emitTwo (events.js:87:13)
+35 verbose stack     at Request.emit (events.js:172:7)
+35 verbose stack     at Request.<anonymous> (D:\Program Files\nodejs\node_modules\npm\node_modules\request\request.js:1063:14)
+35 verbose stack     at emitOne (events.js:82:20)
+35 verbose stack     at Request.emit (events.js:169:7)
+35 verbose stack     at IncomingMessage.<anonymous> (D:\Program Files\nodejs\node_modules\npm\node_modules\request\request.js:1009:12)
+36 verbose statusCode 403
+37 verbose pkgid js-ui-engine
+38 verbose cwd C:\Users\Slyke\Desktop\Javascript-UI-Engine
+39 error Windows_NT 10.0.14393
+40 error argv "D:\\Program Files\\nodejs\\node.exe" "D:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js" "publish"
+41 error node v4.2.2
+42 error npm  v2.14.7
+43 error code E403
+44 error "You cannot publish over the previously published version 1.7.1." : js-ui-engine
+45 error If you need help, you may report this error at:
+45 error     <https://github.com/npm/npm/issues>
+46 verbose exit [ 1, true ]

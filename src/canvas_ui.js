@@ -81,7 +81,7 @@ var CanvasControl = function() {
 
   // Debug functions
   this.debug = {
-    "_version": function() { return "1.7.1"; }(),
+    "_version": function() { return "1.7.2"; }(),
 
     // Set the debug state from outside.
     "setLevel": function (newLevel) {
