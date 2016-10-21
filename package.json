@@ -1,0 +1,18 @@
+{
+  "name": "js-ui-engine",
+  "version": "1.7a",
+  "description": "Javascript UI Engine",
+  "main": "src/canvas_ui.min.js.js",
+  "repository": {
+    "type": "git",
+    "url": "https://"
+  },
+  "author": "Slyke",
+  "contributors": [
+    "Steven Lawler (Slyke) <steven.lawler777@gmail.com>"
+  ],
+  "license": "MIT",
+  "dependencies": {
+
+  }
+}
