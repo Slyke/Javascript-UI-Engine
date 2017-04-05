@@ -3,40 +3,9 @@
   Email: steven.lawler777@gmail.com
   Creation Date: 21/09/2014
   URL: https://github.com/Slyke/Javascript-UI-Engine
-  Version: 1.7.1
+  Version: 1.7.3
   Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
-  Example Usage:
-    //------ Code
-      var canvasControl = new CanvasControl(); //Create the class
-      var c = document.getElementById("canvasDraw"); //Get the canvas as an object.
-      objCanvas = canvasControl.setupCanvas(c); //Setup the canvas for drawing.
-      c.addEventListener('click', function(e) { //Add click event listener.
-        canvasControl.mouseEventHandler(e, "Click");
-      });
-      c.addEventListener('mousemove', function(e) { //Add mouse move event listener.
-        canvasControl.mouseEventHandler(e, "Move");
-      });
-      var newSquare = { //Create a new object
-        "x":50,
-        "y":50,
-        "w":250,
-        "h":250,
-        "shape":"rect", //This lets the click and mouse move handler know what type of object it is.
-        "render":function(self) {
-          canvasControl.drawRect(self.x, self.y, self.w, self.h);
-        },
-        "clickEvent":function(x, y, self) {
-          console.log(x, y, self, "click");
-        },
-        "moveEvent":function(x, y, self) {
-          console.log(x, y, self, "move");
-        },
-        "visible":true
-      }
-      canvasControl.canvasObjects.push(newSquare); //Add object to object list
-      canvasControl.refreshScreen(); //Redraw screen.
-    //------ Code
 
     License:
     The MIT License (MIT)
