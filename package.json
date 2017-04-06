@@ -1,8 +1,8 @@
 {
   "name": "js-ui-engine",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "description": "Javascript UI Engine",
-  "main": "src/canvas_ui.min.js.js",
+  "main": "src/canvas_ui.min.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/Slyke/Javascript-UI-Engine.git"
