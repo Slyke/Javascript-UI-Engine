@@ -10,7 +10,7 @@ Feel free to use this library and if you find any bugs please let me know and I 
 
   NPM: `npm install js-ui-engine`
 
-  Version: `1.7.5`
+  Version: `1.20170407.6`
 
 ##Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
