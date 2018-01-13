@@ -3,7 +3,7 @@
   Email: steven.lawler777@gmail.com
   Creation Date: 21/09/2014
   URL: https://github.com/Slyke/Javascript-UI-Engine
-  Version: 1.20170407.6
+  Version: 1.20180113.7
   Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
 
@@ -34,7 +34,9 @@
 
 var CanvasControl = function() {
 
-  defaultBackgroundObject = {
+  var self = this;
+
+  var defaultBackgroundObject = {
     "backgroundColor":"#000000"
   };
 
@@ -49,8 +51,9 @@ var CanvasControl = function() {
   Math.TAU = (2 * Math.PI); //Add in Tau compatibility
 
   // Debug functions
+  // Example usage: canvasControl.debug.toggle("drawRect")
   this.debug = {
-    "_version": function() { return "1.20170407.6"; }(),
+    "_version": function() { return "1.20180113.7"; }(),
 
     // Set the debug state from outside.
     "setLevel": function (newLevel) {
@@ -65,26 +68,30 @@ var CanvasControl = function() {
     // Toggle a specific debug option
     "toggle": function(toggleOption) {
 
-      var optionInt = getToggleConst[toggleOption];
+      var optionInt = self.debug.getToggleConst[toggleOption];
 
       if (optionInt > -1) {
-        debugConsole = (debugConsole & getToggleConst[toggleOption] ? (debugConsole - getToggleConst[toggleOption]) : (debugConsole + getToggleConst[toggleOption]));
+        debugConsole = (debugConsole & self.debug.getToggleConst[toggleOption] ? (debugConsole - self.debug.getToggleConst[toggleOption]) : (debugConsole + self.debug.getToggleConst[toggleOption]));
+        console.log("Set ", toggleOption, " to ", debugConsole);
+      } else {
+        console.warn("No debug label ", toggleOption, " exists. Try one of:");
+        console.warn(self.debug.getToggleConst);
       }
     },
 
     "getToggleConst": {
-      "setupCanvas":1,
-      "renderObjects":2,
-      "drawRect":4,
-      "drawText":8,
-      "drawArc":16,
-      "drawLine":32,
-      "drawPolygon":64,
-      "drawImage":128,
-      "clearCanvas":256,
-      "refreshScreen":512,
-      "mouseEventHandler":1024,
-      "checkMouseCollision":2048
+      "setupCanvas": 1,
+      "renderObjects": 2,
+      "drawRect": 4,
+      "drawText": 8,
+      "drawArc": 16,
+      "drawLine": 32,
+      "drawPolygon": 64,
+      "drawImage": 128,
+      "clearCanvas": 256,
+      "refreshScreen": 512,
+      "mouseEventHandler": 1024,
+      "checkMouseCollision": 2048
     }
   };
 
@@ -96,7 +103,7 @@ var CanvasControl = function() {
     You can also use CanvasControl.canvasContext for the canvas if you want to use this as a singleton once this function executes.
   // */
   this.setupCanvas = function(objCanvas, objectList, backgroundObject) {
-    objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
+    objectList = (objectList == null ? this.canvasObjects : objectList);
     if (backgroundObject) { defaultBackgroundObject = backgroundObject; }
     this.canvasObject = objCanvas;
     objectList = [];
@@ -110,14 +117,32 @@ var CanvasControl = function() {
 
     return this.canvasContext;
   };
-
   /*
     renderObjects() cycles through each object and runs its render function.
     You can optionally provide an object list, it will use the class's list if you don't
     It returns true when completed.
   // */
   this.renderObjects = function(objectList) {
-    objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
+    objectList = (!objectList ? this.canvasObjects : objectList);
+    objectList.forEach(function(canvasObject) {
+      if (canvasObject.visible != null) {
+        if (canvasObject.visible != false) {
+          canvasObject.render(canvasObject);
+        }
+      }
+    });
+    if (debugConsole & 2) {console.log("[2]: renderObjects(objectList): ", objectList);}
+    return true;
+  };
+
+  /*
+    renderObjectsSync() synchronously cycles through each object and runs its render function.
+    This function is very slow compared to renderObjects()
+    You can optionally provide an object list, it will use the class's list if you don't
+    It returns true when completed.
+  // */
+  this.renderObjectsSync = function(objectList) {
+    objectList = (!objectList ? this.canvasObjects : objectList);
     for (canvasObject in objectList) {
       if (objectList[canvasObject].visible !== undefined && objectList[canvasObject].visible != null) {
         if (objectList[canvasObject].visible != false) {
@@ -137,23 +162,23 @@ var CanvasControl = function() {
     Style is another optional parameter that allows the fill color, the line thickness and the line color to be specified.
   // */
   this.drawRect = function (x, y, w, h, renderType, context, style) {
-    context = (context === undefined || context == null ? this.canvasContext : context);
-    x = (x === undefined || x == null || x == "" ? 0 : x);
-    y = (y === undefined || y == null || y == "" ? 0 : y);
-    w = (w === undefined || w == null || w == "" ? 0 : w);
-    h = (h === undefined || h == null || h == "" ? 0 : h);
+    context = (!context ? this.canvasContext : context);
+    x = (x == null || x === "" ? 0 : x);
+    y = (y == null || y === "" ? 0 : y);
+    w = (w == null || w === "" ? 0 : w);
+    h = (h == null || h === "" ? 0 : h);
     originalFillStyle = context.fillStyle;
     originalStrokeStyle = context.strokeStyle;
-    if (style !== undefined && style != null) {
+    if (style != null) {
       style.fillStyle = (style.fillStyle === undefined ? this.defaultColor : style.fillStyle);
       style.strokeStyle = (style.strokeStyle === undefined ? this.defaultColor : style.strokeStyle);
       style.lineWidth = (style.lineWidth === undefined ? this.defaultLineWidth : style.lineWidth);
     }
-    renderType = (renderType === undefined || renderType == null ? function(){ context.stroke(); } : renderType);
-    if (style !== undefined && style != null) {
-      context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
-      context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
-      context.lineWidth = (style.lineWidth === undefined || style.lineWidth == null ? context.lineWidth : style.lineWidth);
+    renderType = (renderType === undefined || renderType == null ? function() { context.stroke(); } : renderType);
+    if (style != null) {
+      context.fillStyle = (style.fillStyle == null ? context.fillStyle : style.fillStyle);
+      context.strokeStyle = (style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
+      context.lineWidth = (style.lineWidth == null ? context.lineWidth : style.lineWidth);
     }
     context.beginPath();
     context.rect(x, y, w, h);
@@ -174,26 +199,26 @@ var CanvasControl = function() {
       Style is another optional parameter that allows the fill color, the font, text base line, max width and the text stroke color to be specified.
     // */
   this.drawText = function (x, y, text, self, renderText, context, style) {
-    context = (context === undefined || context == null ? this.canvasContext : context);
-    x = (x === undefined || x == null || x == "" ? 0 : x);
-    y = (y === undefined || y == null || y == "" ? 0 : y);
-    self.w = (self.w === undefined || self.w == null || self.w == "" ? context.measureText(text).width : self.w);
-    self.h = (self.h === undefined || self.h == null || self.h == "" ? context.measureText(text).height : self.h);
+    context = (!context ? this.canvasContext : context);
+    x = (x == null || x === "" ? 0 : x);
+    y = (y == null || y === "" ? 0 : y);
+    self.w = (self.w == null || self.w === "" ? context.measureText(text).width : self.w);
+    self.h = (self.h == null || self.h === "" ? context.measureText(text).height : self.h);
     originalFillStyle = context.fillStyle;
     originalStrokeStyle = context.strokeStyle;
-    if (style !== undefined && style != null) {
-      context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
-      context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
+    if (style != null) {
+      context.fillStyle = (style.fillStyle == null ? context.fillStyle : style.fillStyle);
+      context.strokeStyle = (style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
       style.textBaseline = (style.textBaseline === undefined ? "hanging" : style.textBaseline);
       style.font = (style.font === undefined ? "" : style.font);
       style.maxWidth = (style.maxWidth === undefined ? null : style.maxWidth);
     } else {
       style = {};
     }
-    renderText = (renderText === undefined || renderText == null ? function(x, y, text, maxWidth){ context.fillText(text, x, y); } : renderText);
-    if (style !== undefined && style != null) {
-      context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
-      context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
+    renderText = (renderText == null ? function(x, y, text, maxWidth){ context.fillText(text, x, y); } : renderText);
+    if (style != null) {
+      context.fillStyle = (style.fillStyle == null ? context.fillStyle : style.fillStyle);
+      context.strokeStyle = (style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
       context.textBaseline = (style.textBaseline === undefined ? context.textBaseline : style.textBaseline);
       context.font = (style.font === undefined ? context.font : style.font);
       style.maxWidth = (style.maxWidth === undefined ? context.maxWidth : style.maxWidth);
@@ -215,12 +240,12 @@ var CanvasControl = function() {
     Style is another optional parameter that allows the fill color, the line thickness and the line color to be specified.
   // */
   this.drawArc = function (x, y, r, s, f, renderType, context, style) {
-    context = (context === undefined || context == null ? this.canvasContext : context);
-    x = (x === undefined || x == null || x == "" ? 0 : x);
-    y = (y === undefined || y == null || y == "" ? 0 : y);
-    s = (s === undefined || s == null || s == "" ? 0 : s);
-    r = (r === undefined || r == null || r == "" ? 0 : r);
-    f = (f === undefined || f == null || f == "" ? 2 * Math.TAU : f);
+    context = (!context ? this.canvasContext : context);
+    x = (x == null || x === "" ? 0 : x);
+    y = (y == null || y === "" ? 0 : y);
+    s = (s == null || s === "" ? 0 : s);
+    r = (r == null || r === "" ? 0 : r);
+    f = (f == null || f === "" ? 2 * Math.TAU : f);
     originalFillStyle = context.fillStyle;
     originalStrokeStyle = context.strokeStyle;
     if (style !== undefined && style != null) {
@@ -228,11 +253,11 @@ var CanvasControl = function() {
       style.strokeStyle = (style.strokeStyle === undefined ? this.defaultColor : style.strokeStyle);
       style.lineWidth = (style.lineWidth === undefined ? this.defaultLineWidth : style.lineWidth);
     }
-    renderType = (renderType === undefined || renderType == null ? function(){ context.stroke(); } : renderType);
-    if (style !== undefined && style != null) {
-      context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
-      context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
-      context.lineWidth = (style.lineWidth === undefined || style.lineWidth == null ? context.lineWidth : style.lineWidth);
+    renderType = (renderType == null ? function() { context.stroke(); } : renderType);
+    if (style != null) {
+      context.fillStyle = (style.fillStyle == null ? context.fillStyle : style.fillStyle);
+      context.strokeStyle = (style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
+      context.lineWidth = (style.lineWidth == null ? context.lineWidth : style.lineWidth);
     }
     context.beginPath();
     context.arc(x, y, r, s, f);
@@ -251,11 +276,11 @@ var CanvasControl = function() {
     Style is another optional parameter that allows the line thickness and the line color to be specified.
   // */
   this.drawLine = function (x1, y1, x2, y2, context, style) {
-    context = (context === undefined || context == null ? this.canvasContext : context);
-    x1 = (x1 === undefined || x1 == null || x1 == "" ? 0 : x1);
-    y1 = (y1 === undefined || y1 == null || y1 == "" ? 0 : y1);
-    x2 = (x2 === undefined || x2 == null || x2 == "" ? 0 : x2);
-    y2 = (y2 === undefined || y2 == null || y2 == "" ? 0 : y2);
+    context = (!context ? this.canvasContext : context);
+    x1 = (x1 == null || x1 === "" ? 0 : x1);
+    y1 = (y1 == null || y1 === "" ? 0 : y1);
+    x2 = (x2 == null || x2 === "" ? 0 : x2);
+    y2 = (y2 == null || y2 === "" ? 0 : y2);
     originalFillStyle = context.fillStyle;
     originalStrokeStyle = context.strokeStyle;
     if (style !== undefined && style != null) {
@@ -263,8 +288,8 @@ var CanvasControl = function() {
       style.lineWidth = (style.lineWidth === undefined ? this.defaultLineWidth : style.lineWidth);
     }
     if (style !== undefined && style != null) {
-      context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
-      context.lineWidth = (style.lineWidth === undefined || style.lineWidth == null ? context.lineWidth : style.lineWidth);
+      context.strokeStyle = (style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
+      context.lineWidth = (style.lineWidth == null ? context.lineWidth : style.lineWidth);
     }
     context.beginPath();
     context.moveTo(x1, y1);
@@ -286,20 +311,20 @@ var CanvasControl = function() {
     Style is another optional parameter that allows the line thickness and the line color to be specified.
   // */
   this.drawPolygon = function (polygonPoints, autoArrange, renderType, context, style) {
-    context = (context === undefined || context == null ? this.canvasContext : context);
-    autoArrange = (autoArrange === undefined || autoArrange == null || autoArrange == "" ? true : autoArrange);
+    context = (!context ? this.canvasContext : context);
+    autoArrange = (autoArrange == null || autoArrange === "" ? true : autoArrange);
     originalFillStyle = context.fillStyle;
     originalStrokeStyle = context.strokeStyle;
-    if (style !== undefined && style != null) {
+    if (style != null) {
       style.fillStyle = (style.fillStyle === undefined ? this.defaultColor : style.fillStyle);
       style.strokeStyle = (style.strokeStyle === undefined ? this.defaultColor : style.strokeStyle);
       style.lineWidth = (style.lineWidth === undefined ? this.defaultLineWidth : style.lineWidth);
     }
-    renderType = (renderType === undefined || renderType == null ? function(){ context.stroke(); } : renderType);
-    if (style !== undefined && style != null) {
-      context.fillStyle = (style.fillStyle === undefined || style.fillStyle == null ? context.fillStyle : style.fillStyle);
-      context.strokeStyle = (style.strokeStyle === undefined || style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
-      context.lineWidth = (style.lineWidth === undefined || style.lineWidth == null ? context.lineWidth : style.lineWidth);
+    renderType = (renderType == null ? function() { context.stroke(); } : renderType);
+    if (style != null) {
+      context.fillStyle = (style.fillStyle == null ? context.fillStyle : style.fillStyle);
+      context.strokeStyle = (style.strokeStyle == null ? context.strokeStyle : style.strokeStyle);
+      context.lineWidth = (style.lineWidth == null ? context.lineWidth : style.lineWidth);
     }
 
     if (autoArrange) {
@@ -312,7 +337,6 @@ var CanvasControl = function() {
       for (var i = 1; i < polygonPoints.length; i++) {
         context.lineTo(polygonPoints[i][0], polygonPoints[i][1]);
       }
-      // context.moveTo(polygonPoints[0][0], polygonPoints[0][1]);
     }
 
     context.closePath();
@@ -338,9 +362,9 @@ var CanvasControl = function() {
         If a width and height is not specified in the image object, then the mouse events will not fire.
     // */
   this.drawImage = function (srcImage, x, y, w, h, sx, sy, sw, sh, context) {
-    context = (context === undefined || context == null ? this.canvasContext : context);
-    x = (x === undefined || x == null || x == "" ? 0 : x);
-    y = (y === undefined || y == null || y == "" ? 0 : y);
+    context = (!context ? this.canvasContext : context);
+    x = (x == null || x === "" ? 0 : x);
+    y = (y == null || y === "" ? 0 : y);
     w = (w === undefined ? srcImage.width : w);
     h = (h === undefined ? srcImage.height : h);
     sx = (h === undefined ? null : sx);
@@ -353,7 +377,7 @@ var CanvasControl = function() {
       srcImage.w = (srcImage.w < 0 ? srcImage.objImage.width : srcImage.w);
       srcImage.h = (srcImage.h < 0 ? srcImage.objImage.height : srcImage.h);
       context.beginPath();
-      if (sx == null || sy == null || sw == null || sh == null || sx == 0 || sy == 0 || sw == 0 || sh == 0) {
+      if (sx === null || sy === null || sw === null || sh === null || sx === 0 || sy === 0 || sw === 0 || sh === 0) {
         if (w < 0 || h < 0) {
           context.drawImage(srcImage.objImage, x, y);
         } else {
@@ -369,7 +393,7 @@ var CanvasControl = function() {
         srcImage.w = (srcImage.w < 0 ? srcImage.objImage.width : srcImage.w);
         srcImage.h = (srcImage.h < 0 ? srcImage.objImage.height : srcImage.h);
         context.beginPath();
-        if (sx == null || sy == null || sw == null || sh == null || sx == 0 || sy == 0 || sw == 0 || sh == 0) {
+        if (sx === null || sy === null || sw === null || sh === null || sx === 0 || sy === 0 || sw === 0 || sh === 0) {
           if (w < 0 || h < 0) {
             context.drawImage(srcImage.objImage, x, y);
           } else {
@@ -394,7 +418,7 @@ var CanvasControl = function() {
     transparentBackground will use clearRect() instead of the drawRect() function, which will allow for canvases that use transparent backgrounds to still be transparent, instead of drawing a background color.
   // */
   this.clearCanvas = function(backgroundColor, context, transparentBackground) {
-    context = (context === undefined || context == null ? this.canvasContext : context);
+    context = (!context ? this.canvasContext : context);
     transparentBackground = (transparentBackground === undefined || transparentBackground == null ? true : transparentBackground);
     originalFillStyle = context.fillStyle;
     if (defaultBackgroundObject !== undefined && defaultBackgroundObject != null) {
@@ -405,7 +429,7 @@ var CanvasControl = function() {
     if (transparentBackground) {
       context.clearRect(0, 0, this.canvasObject.width, this.canvasObject.height);
     } else {
-      this.drawRect(0, 0, this.canvasObject.width, this.canvasObject.height, function(){ context.fill(); }, context, {"fillStyle":backgroundColor});
+      this.drawRect(0, 0, this.canvasObject.width, this.canvasObject.height, function() { context.fill(); }, context, {"fillStyle": backgroundColor});
     }
 
     context.fillStyle = originalFillStyle;
@@ -418,8 +442,8 @@ var CanvasControl = function() {
     Both context and objectList are optional and will default to the class's if not specified.
   // */
   this.refreshScreen = function(transparentBackground, context, objectList) {
-    context = (context === undefined || context == null ? this.canvasContext : context);
-    objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
+    context = (!context ? this.canvasContext : context);
+    objectList = (!objectList ? this.canvasObjects : objectList);
     this.clearCanvas(null, context, transparentBackground);
     this.renderObjects(objectList);
     if (debugConsole & 512) {console.log("[512]: refreshScreen(transparentBackground, context, objectList): ", transparentBackground, context, objectList);}
@@ -431,11 +455,47 @@ var CanvasControl = function() {
     You can optionally pass the object list. If you don't the class' one will be used.
   // */
   this.mouseEventHandler = function(e, eventType, objectList) {
+    objectList = (!objectList ? this.canvasObjects : objectList);
+    var clickObject = null;
+    triggedObjectList = this.checkMouseCollision(e.offsetX, e.offsetY);
+    triggedObjectList.forEach(function (triggeredObject) {
+      if (eventType === "Click") {
+        if (typeof (triggeredObject.clickEvent) === "function") {
+          if (triggeredObject.enabled != null) {
+            if (triggeredObject.enabled === true) {
+              triggeredObject.clickEvent(e.offsetX, e.offsetY, triggeredObject);
+            }
+          } else {
+            triggeredObject.clickEvent(e.offsetX, e.offsetY, triggeredObject);
+          }
+        }
+      } else if (eventType == "Move") {
+        if (typeof (triggeredObject.moveEvent) === "function") {
+          if (triggeredObject.enabled != null) {
+            if (triggeredObject.enabled === true) {
+              triggeredObject.moveEvent(e.offsetX, e.offsetY, triggeredObject);
+            }
+          } else {
+            triggeredObject.moveEvent(e.offsetX, e.offsetY, triggeredObject);
+          }
+        }
+      }
+    });
+    if (debugConsole & 1024) {console.log("[1024]: mouseEventHandler(e, eventType, objectList): ", e, eventType, objectList);}
+  };
+
+  /*
+    mouseEventHandlerSync() will synchronously run checkMouseCollision() to determine which object the mouse is over, and then execute all objects in that list.
+    This function is very slow compared to mouseEventHandler()
+    This function should be called from the JavaScript event listeners.
+    You can optionally pass the object list. If you don't the class' one will be used.
+  // */
+  this.mouseEventHandlerSync = function(e, eventType, objectList) {
     objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
     var clickObject = null;
     triggedObjectList = this.checkMouseCollision(e.offsetX, e.offsetY);
     for (var triggeredObject in triggedObjectList) {
-      if (triggedObjectList[triggeredObject]!=null) {
+      if (triggedObjectList[triggeredObject] != null) {
         if (eventType == "Click") {
           if (triggedObjectList[triggeredObject].clickEvent !== undefined && triggedObjectList[triggeredObject].clickEvent != null) {
             if (triggedObjectList[triggeredObject].enabled !== undefined && triggedObjectList[triggeredObject].enabled != null) {
@@ -459,16 +519,91 @@ var CanvasControl = function() {
         }
       }
     }
-    if (debugConsole & 1024) {console.log("[1024]: mouseEventHandler(e, eventType, objectList): ", e, eventType, objectList);}
+    if (debugConsole & 1024) {console.log("[1024]: mouseEventHandlerSync(e, eventType, objectList): ", e, eventType, objectList);}
   };
 
   /*
     checkMouseCollision() cycles through a list of objects and determines whether the mouseX and mouseY point is inside that object.
-    This function currently doesn't support polygons. Only circles and squares.
     mouseX and mouseY is the point of interest.
     The objectList is optional and the class' default one will be used if it's not specified.
   // */
   this.checkMouseCollision = function(mouseX, mouseY, objectList) {
+    objectList = (!objectList ? this.canvasObjects : objectList);
+    clickedObjects = [];
+    objectList.forEach(function (objectItem) {
+      if (objectItem != null) {
+        if (objectItem.shape !== null) {
+          switch (objectItem.shape) {
+            case "rect":
+              if (objectItem.x !== null && objectItem.w !== null && objectItem.y !== null && objectItem.h !== null) {
+                if (objectItem.x <= mouseX && (objectItem.x + objectItem.w) >= mouseX && objectItem.y <= mouseY && (objectItem.y + objectItem.h) >= mouseY) {
+                  clickedObjects.push(objectItem);
+                }
+              }
+              break;
+
+            case "arc":
+              //Warning: This assume it's a full circle, not an arc.
+              if (objectItem.x != null && objectItem.y != null && objectItem.r != null) {
+                if (Math.sqrt((mouseX - objectItem.x) * (mouseX - objectItem.x) + (mouseY - objectItem.y) * (mouseY - objectItem.y)) < objectItem.r) {
+                  clickedObjects.push(objectItem);
+                }
+              }
+              break;
+
+            case "image":
+              //Warning: Image height and width must be set for this to work.
+              if (objectItem.x !== null && objectItem.w !== null && objectItem.y !== null && objectItem.h !== null) {
+                if (objectItem.x <= mouseX && (objectItem.x + objectItem.w) >= mouseX && objectItem.y <= mouseY && (objectItem.y + objectItem.h) >= mouseY) {
+                  clickedObjects.push(objectItem);
+                }
+              }
+              break;
+
+            case "text":
+              //Warning: This treats the text as a rectangle block. Doesn't work if width and height aren't set.
+              if (objectItem.x !== null && objectItem.w !== null && objectItem.y !== null && objectItem.h !== null) {
+                if (objectItem.x <= mouseX && (objectItem.x + objectItem.w) >= mouseX && objectItem.y <= mouseY && (objectItem.y + objectItem.h) >= mouseY) {
+                  clickedObjects.push(objectItem);
+                }
+              }
+              break;
+
+            case "polygon":
+              // This is based off the algorithm and code from here: http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+              var vs = objectItem.coordinates[0];
+              var isInside = false;
+              for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+                var xi = vs[i][0];
+                var yi = vs[i][1];
+                var xj = vs[j][0];
+                var yj = vs[j][1];
+
+                var intersect = ((yi > mouseY) != (yj > mouseY)) && (mouseX < (xj - xi) * (mouseY - yi) / (yj - yi) + xi);
+                if (intersect) { isInside = !isInside; }
+              }
+              if (isInside) {
+                clickedObjects.push(objectItem);
+              }
+              break;
+
+          }
+        }
+      }
+    });
+
+    if (debugConsole & 2048) {console.log("[2048]: checkMouseCollision(mouseX, mouseY, objectList): ", mouseX, mouseY, objectList);}
+    return clickedObjects;
+  };
+
+
+  /*
+    checkMouseCollisionSync() synchronously cycles through a list of objects and determines whether the mouseX and mouseY point is inside that object.
+    This function is very slow compared to checkMouseCollision()
+    mouseX and mouseY is the point of interest.
+    The objectList is optional and the class' default one will be used if it's not specified.
+  // */
+  this.checkMouseCollisionSync = function(mouseX, mouseY, objectList) {
     objectList = (objectList === undefined || objectList == null ? this.canvasObjects : objectList);
     clickedObjects = [];
     for (var objectIndex in objectList) {
@@ -480,28 +615,28 @@ var CanvasControl = function() {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
-          } else if (objectList[objectIndex].shape == "arc") {
+          } else if (objectList[objectIndex].shape === "arc") {
             //Warning: This assume it's a full circle, not an arc.
             if ((objectList[objectIndex].x !== undefined && objectList[objectIndex].x != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].r !== undefined && objectList[objectIndex].r != null)) {
-              if (Math.sqrt((mouseX-objectList[objectIndex].x) * (mouseX-objectList[objectIndex].x) + (mouseY-objectList[objectIndex].y) * (mouseY-objectList[objectIndex].y)) < objectList[objectIndex].r) {
+              if (Math.sqrt((mouseX-objectList[objectIndex].x) * (mouseX-objectList[objectIndex].x) + (mouseY - objectList[objectIndex].y) * (mouseY - objectList[objectIndex].y)) < objectList[objectIndex].r) {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
-          } else if (objectList[objectIndex].shape == "image") {
+          } else if (objectList[objectIndex].shape === "image") {
             //Warning: Image height and width must be set for this to work.
             if ((objectList[objectIndex].x !== undefined && objectList[objectIndex].x != null) && (objectList[objectIndex].w !== undefined && objectList[objectIndex].w != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].h !== undefined && objectList[objectIndex].h != null) ) {
-              if (objectList[objectIndex].x <= mouseX && (objectList[objectIndex].x+objectList[objectIndex].w) >= mouseX && objectList[objectIndex].y <= mouseY && (objectList[objectIndex].y+objectList[objectIndex].h) >= mouseY) {
+              if (objectList[objectIndex].x <= mouseX && (objectList[objectIndex].x + objectList[objectIndex].w) >= mouseX && objectList[objectIndex].y <= mouseY && (objectList[objectIndex].y + objectList[objectIndex].h) >= mouseY) {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
-          } else if (objectList[objectIndex].shape == "text") {
+          } else if (objectList[objectIndex].shape === "text") {
             //Warning: This treats the text as a rectangle block. Doesn't work if width and height aren't set.
             if ((objectList[objectIndex].x !== undefined && objectList[objectIndex].x != null) && (objectList[objectIndex].w !== undefined && objectList[objectIndex].w != null) && (objectList[objectIndex].y !== undefined && objectList[objectIndex].y != null) && (objectList[objectIndex].h !== undefined && objectList[objectIndex].h != null) ) {
-              if (objectList[objectIndex].x <= mouseX && (objectList[objectIndex].x+objectList[objectIndex].w) >= mouseX && objectList[objectIndex].y <= mouseY && (objectList[objectIndex].y+objectList[objectIndex].h) >= mouseY) {
+              if (objectList[objectIndex].x <= mouseX && (objectList[objectIndex].x + objectList[objectIndex].w) >= mouseX && objectList[objectIndex].y <= mouseY && (objectList[objectIndex].y + objectList[objectIndex].h) >= mouseY) {
                 clickedObjects.push(objectList[objectIndex]);
               }
             }
-          } else if (objectList[objectIndex].shape=="polygon") {
+          } else if (objectList[objectIndex].shape === "polygon") {
             // This is based off the algorithm and code from here: http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
             var vs = objectList[objectIndex].coordinates[0];
             var isInside = false;
@@ -521,8 +656,9 @@ var CanvasControl = function() {
         }
       }
     }
-      if (debugConsole & 2048) {console.log("[2048]: checkMouseCollision(mouseX, mouseY, objectList): ", mouseX, mouseY, objectList);}
-      return clickedObjects;
+
+    if (debugConsole & 2048) {console.log("[2048]: checkMouseCollisionAsync(mouseX, mouseY, objectList): ", mouseX, mouseY, objectList);}
+    return clickedObjects;
   };
 
 

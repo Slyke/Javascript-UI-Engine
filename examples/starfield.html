@@ -3,7 +3,30 @@
   <head>
     <title>Asteroids</title>
     <script src="../src/canvas_ui.js"></script>
-    <link rel="stylesheet" type="text/css" href="styles.css">
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      canvas {
+        border-style: solid;
+        border-width: 2px;
+        width: 100%;
+        height: 100%;
+      }
+
+      .canvasContainer {
+        position:absolute;
+        width: 95%;
+        height: 90%;
+        margin: auto;
+        position: absolute;
+        top: 5%;
+        left: 0;
+        right: 0;
+      }
+    </style>
 
     <script>
 
@@ -27,6 +50,10 @@
 
         objCanvas = document.getElementById("canvasDraw");
         canvasControl = new CanvasControl();
+
+        // This is the canvas resolution, NOT the size.
+        objCanvas.width = 1080;
+        objCanvas.height = 720;
 
         objContext = canvasControl.setupCanvas(objCanvas, null, {backgroundColor:"#000000"});
 
@@ -352,7 +379,7 @@
   <body onload="init();">
     <div class="canvasContainer">
       Try clicking and moving the mouse, and pressing space bar.<br />
-      <canvas id="canvasDraw" width = "1080px" height = "720px"></canvas>
+      <canvas id="canvasDraw">Hmmm... Your browser doesn't seem to support HTML 5 Canvas</canvas>
     </div>
   </body>
 </html>
