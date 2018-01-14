@@ -1,6 +1,6 @@
 {
   "name": "js-ui-engine",
-  "version": "1.20170407.6",
+  "version": "1.20180114.8",
   "description": "Javascript UI Engine",
   "main": "src/canvas_ui.js",
   "repository": {
