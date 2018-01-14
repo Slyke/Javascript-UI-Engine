@@ -10,12 +10,13 @@ Feel free to use this library and if you find any bugs please let me know and I 
 
   NPM: `npm install js-ui-engine`
 
-  Version: `1.20170407.6`
+  Version: `1.20180114.8`
 
-##Description:
+## Description:
+
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
 
-##Example Usage:
+## Example Usage:
 ```
       var canvasControl = new CanvasControl(); //Create the class
       var c = document.getElementById("canvasDraw"); //Get the canvas as an object.
@@ -49,7 +50,8 @@ Feel free to use this library and if you find any bugs please let me know and I 
 
 Checkout the examples folder for more.
 
-##License:
+## License:
+
     The MIT License (MIT)
 
       Copyright (c) 2014 Steven Lawler (Slyke)

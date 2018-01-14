@@ -3,7 +3,7 @@
   Email: steven.lawler777@gmail.com
   Creation Date: 21/09/2014
   URL: https://github.com/Slyke/Javascript-UI-Engine
-  Version: 1.20180113.7
+  Version: 1.20180114.8
   Description:
     This is a simple canvas control class for Javascript. This class can be used as an instantiated object or as a singleton.
 
@@ -53,7 +53,7 @@ var CanvasControl = function() {
   // Debug functions
   // Example usage: canvasControl.debug.toggle("drawRect")
   this.debug = {
-    "_version": function() { return "1.20180113.7"; }(),
+    "_version": function() { return "1.20180114.8"; }(),
 
     // Set the debug state from outside.
     "setLevel": function (newLevel) {
@@ -126,7 +126,7 @@ var CanvasControl = function() {
     objectList = (!objectList ? this.canvasObjects : objectList);
     objectList.forEach(function(canvasObject) {
       if (canvasObject.visible != null) {
-        if (canvasObject.visible != false) {
+        if (canvasObject.visible !== false) {
           canvasObject.render(canvasObject);
         }
       }

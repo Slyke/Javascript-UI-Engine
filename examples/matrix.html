@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Matrix</title>
+    <script src="../src/canvas_ui.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      canvas {
+        border-style: solid;
+        border-width: 2px;
+        width: 100%;
+        height: 100%;
+      }
+
+      .canvasContainer {
+        position:absolute;
+        width: 95%;
+        height: 90%;
+        margin: auto;
+        position: absolute;
+        top: 5%;
+        left: 0;
+        right: 0;
+      }
+    </style>
+
+    <script>
+
+      var possibleLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      possibleLetters += "あいうえおかきくけこさしすせそたちつてとなにぬねのは";
+      possibleLetters += "アイウエオカキクケコサシスズセソタチツテトナニヌネノハ";
+      possibleLetters += "バヒフヘホマミムメモヤユヨラリルレロヮワヰヱヲンヴヵヶヷヸヹヺーヽヾヿ";
+
+      var drawScale = 1;
+      var fontSize = 0.012;
+      var fontStyle = "Bold Megrim"; // "Megrim";
+      var isAnimating = true;
+      var characterSize = 10;
+      var chainTimer = 60;
+      var chainCount = 75;
+      var maxChainSize = 50;
+      var chainDirections = 15; // 1 = Downwards, 2 = Upwards, 4 = Leftwards, 8 = Rightwards, 15 = all directions.
+      var chainCanRandomlyChangeDirection = true;
+      var chainChangeDirectionChange = 30; // This is 1/30
+      var disableMoving = true;
+      var randomCharacterReplace = 75; // This means 1/75 chance a character will be replaced.
+      var showFPS = false;
+
+      var objCanvas = null;
+      var canvasControl = null;
+      var lastAnimationTime = -1;
+      var currentAngle = 0;
+      var isWarping = false;
+
+      var fpsNumber = 0;
+      var frameCount = 0;
+
+      var letterChains = [];
+
+      var gameDimensions = [0, 0];
+
+      function init() {
+        lastAnimationTime = new Date().getTime();
+        currentAngle = Math.floor((Math.random() * 360) + 0);
+
+        objCanvas = document.getElementById("canvasDraw");
+        objCanvas.imageSmoothingEnabled = true;
+        canvasControl = new CanvasControl();
+
+        // This is the canvas resolution, NOT the size.
+        objCanvas.width = 1080;
+        objCanvas.height = 720;
+
+        objContext = canvasControl.setupCanvas(objCanvas, null, {backgroundColor: "#000000"});
+
+        setupEventHandlers(objCanvas, canvasControl);
+        gameDimensions = [objCanvas.width, objCanvas.height];
+
+        animateLoop();
+
+        setTimeout(() => {
+          displayText("The quick brown fox jumped over the lazy dog!", null, null, undefined, undefined, "0, 200, 255")
+        }, 1000);
+      };
+
+      function createChain(x = -1, y = -1, l = 25, st = 1000) {
+        var localChain = [];
+        var myID = uuidv4();
+        var currentAlpha = randomNumber(1, 3);
+
+        var possibleDirections = getPossibleDirections();
+        var chainDirection = possibleDirections[randomNumber(0, possibleDirections.length)];
+        var chainVector = {
+          chainAngle: ((Math.random() * 359) + 0),
+          chainZ: ((Math.random() * 5) + 0.01)
+        }
+
+        var newChain = {
+          "chainID": myID,
+          "chainObject": localChain,
+          "direction": chainDirection
+        }
+
+        letterChains.push(newChain);
+
+        var initialDelayTimeout = setTimeout(function() {
+          var timerChain = setInterval(() => {
+              if (currentAlpha > 1) {
+                localChain.map((link) => {
+                  if (randomNumber(1, randomCharacterReplace) === 1) {
+                    link.text = randomChar();
+                  }
+                });
+              }
+
+              if (chainCanRandomlyChangeDirection) {
+                  if (randomNumber(1, chainChangeDirectionChange) === 1) {
+                    newChain.direction = possibleDirections[randomNumber(0, possibleDirections.length)];
+                  }
+                }
+                  
+              if (localChain.length < l) {
+                var newChainLink = {};
+                if (localChain.length === 0) {
+                  newChainLink = createChainLink(relToAbs(x, 0), relToAbs(y, 1), localChain.length, chainVector, newChain.direction);
+                } else {
+                  newChainLink = createChainLink(localChain[0].x, localChain[0].y, localChain.length, chainVector, newChain.direction);
+                }
+                localChain.map((link) => {
+                  link.render = (self) => {
+                    canvasControl.drawText(self.x, self.y, self.text, self, null, null, {'fillStyle': "#11BB00"});
+                  }
+                });
+                localChain.push(newChainLink);
+              } else {
+                localChain.map((link) => {
+                  link.render = (self) => {
+                    if (currentAlpha < 1) {
+                      canvasControl.drawText(self.x, self.y, self.text, self, null, null, {'fillStyle': "rgba(153, 255, 153, " + currentAlpha + ")"});
+                    } else {
+                      canvasControl.drawText(self.x, self.y, self.text, self, null, null, {'fillStyle': "rgba(17, 187, 0, " + currentAlpha + ")"});
+                    }
+                    currentAlpha -= 0.0015;
+                  }
+                });
+                if (currentAlpha < 0) {
+                clearInterval(timerChain);
+                  localChain = [];
+                  letterChains = letterChains.filter((chain) => {
+                      return chain.chainID !== myID;
+                  });
+                }
+              }
+          }, chainTimer);
+      }, st);
+    }
+
+    function displayText(text, x = null, y = null, st = 500, direction = "right", textColor = "153, 255, 153", stayAlpha = 6, fontSize = 18, letterSpacing = 26) {
+        var localChain = [];
+        var myID = uuidv4();
+        var currentAlpha = stayAlpha;
+
+        var possibleDirections = getPossibleDirections();
+        var chainDirection = direction;
+        var chainVector = {
+          chainAngle: ((Math.random() * 359) + 0),
+          chainZ: ((Math.random() * 5) + 0.01)
+        }
+
+        if (x === null) {
+          x = 0.3
+        }
+
+        if (y === null) {
+          y = 0.5
+        }
+
+        var newChain = {
+          "chainID": myID,
+          "chainObject": localChain,
+          "direction": chainDirection
+        }
+
+        letterChains.push(newChain);
+
+        var initialDelayTimeout = setTimeout(function() {
+          var timerChain = setInterval(() => {
+            if (localChain.length < text.length) {
+              var newChainLink = {};
+              if (localChain.length === 0) {
+                newChainLink = createChainLink(relToAbs(x, 0), relToAbs(y, 1), localChain.length, chainVector, newChain.direction, text[localChain.length]);
+              } else {
+                newChainLink = createChainLink(localChain[0].x, localChain[0].y, localChain.length, chainVector, newChain.direction, text[localChain.length]);
+              }
+              localChain.map((link) => {
+                link.render = (self) => {
+                  canvasControl.drawText(self.x, self.y, self.text, self, null, null, {'fillStyle': "rgb(" + textColor + ")", "font": fontSize + 'px ' + fontStyle});
+                  calculateFontSize();
+                }
+              });
+              localChain.push(newChainLink);
+            } else {
+              localChain.map((link) => {
+                link.render = (self) => {
+                  if (currentAlpha < 1) {
+                    canvasControl.drawText(self.x, self.y, self.text, self, null, null, {'fillStyle': "rgba(153, 255, 153, " + currentAlpha + ")", "font": fontSize + 'px ' + fontStyle});
+                  } else {
+                    canvasControl.drawText(self.x, self.y, self.text, self, null, null, {'fillStyle': "rgba(" + textColor + ", " + currentAlpha + ")", "font": fontSize + 'px ' + fontStyle});
+                  }
+                  calculateFontSize();
+                  currentAlpha -= 0.0015;
+                }
+              });
+              if (currentAlpha < 0) {
+              clearInterval(timerChain);
+                localChain = [];
+                letterChains = letterChains.filter((chain) => {
+                    return chain.chainID !== myID;
+                });
+              }
+            }
+          }, chainTimer);
+      }, st);
+    }
+
+      function animateLoop() {
+        var currentTime = new Date().getTime();
+        var timeDiff = ((currentTime - lastAnimationTime) / 1000);
+
+        frameCount++
+
+        if (frameCount > 5) {
+          frameCount = 0;
+          fpsNumber = Math.round((1 / timeDiff), 1);
+        }
+        
+        calculateFontSize();
+        calculateNextFrame(timeDiff);
+        calculateNewChains();
+
+        if (isAnimating) {
+          requestAnimationFrame(() => { animateLoop(); });
+        }
+
+        this.lastAnimationTime = currentTime;
+        canvasControl.refreshScreen(false);
+    }
+
+    function calculateNewChains() {
+      if (letterChains.length < chainCount) {
+            var newPosX = randomNumber(1, 100);
+            var newPosY = randomNumber(1, 100);
+            var chainSize = randomNumber(5, maxChainSize);
+            var startTime = randomNumber(500, 2500);
+            newPosX /= 100;
+            newPosY /= 100;
+            createChain(newPosX, newPosY, chainSize, startTime);
+        }
+    }
+
+    function createChainLink(x, y, newLinkIndex, chainVector, direction = "down", specificCharacter = null, letterSpacing = characterSize) {
+
+      var dy = 0;
+      var dx = 0;
+
+      switch (direction) {
+        case "down":
+          dy = (newLinkIndex * letterSpacing);
+          break;
+
+        case "up":
+          dy = (-1 * (newLinkIndex * letterSpacing));
+          break;
+
+        case "right":
+          dx = (newLinkIndex * letterSpacing);
+          break;
+
+        case "left":
+          dx = (-1 * (newLinkIndex * letterSpacing));
+          break;
+
+        default:
+          dy = (newLinkIndex * letterSpacing);
+      }
+
+      return {
+        'x': x + dx,
+        'y': y + dy,
+        'z': chainVector.chainZ,
+        'text': (specificCharacter ? specificCharacter : randomChar()),
+        'shape': 'text',
+        'render': (self) => {
+          canvasControl.drawText(self.x, self.y, self.text, self, null, null, {'fillStyle': "#99FF99"});
+        },
+        "vector": {
+          "angle": chainVector.chainAngle,
+          "velocity": chainVector.chainZ
+        },
+        'visible': true
+      }
+    }
+
+    function randomChar() {
+        return possibleLetters.charAt(Math.floor(Math.random() * possibleLetters.length));
+    }
+
+    function calculateNextFrame(timeDiff) {
+      canvasControl.canvasObjects = [];
+
+      if (showFPS) {
+        var lblFPS = {
+          "x": 0,
+          "y": 0,
+          "name":"lblFPS",
+          "text":"FPS: " + fpsNumber,
+          "shape":"text",
+          "gameProperties": {
+            "class":"text"
+          },
+          "render":function(self) {
+            canvasControl.drawText(self.x, self.y, self.text, self, null, null, {"fillStyle":"#99FF00"});
+          },
+          "visible":true
+        };
+
+        canvasControl.canvasObjects.push(lblFPS);
+      }
+      
+
+      if (!disableMoving) {
+        letterChains.map((chain) => {
+          var newDisplacement = calculateLinkVector(chain.chainObject[0], timeDiff);
+          chain.chainObject.map((link) => {
+            link.x += newDisplacement[0] ? newDisplacement[0] : link.x;
+            link.y += newDisplacement[1] ? newDisplacement[1] : link.y;
+            canvasControl.canvasObjects.push(link);
+          });
+        });
+      } else {
+        letterChains.map((chain) => {
+          chain.chainObject.map((link) => {
+            canvasControl.canvasObjects.push(link);
+          });
+        });
+      }
+    }
+
+    function calculateLinkVector(chainHead, ratioAmount) {
+      if (!chainHead) { return false }
+      var newAngle = ((Math.atan2((objCanvas.height / 2) - chainHead.y, (objCanvas.width / 2) - chainHead.x) * 180) / Math.PI);
+      var newDistance = Math.sqrt((chainHead.x - objCanvas.width) * (chainHead.x - objCanvas.width) + (chainHead.y - objCanvas.height) * (chainHead.y - objCanvas.height));
+
+      var dX = (((Math.cos((newAngle + 180) * Math.PI / 180) * ((chainHead.z * newDistance * 0.02) * ratioAmount)) + chainHead.x) - chainHead.x);
+      var dY = (((Math.sin((newAngle + 180) * Math.PI / 180) * ((chainHead.z * newDistance * 0.02) * ratioAmount)) + chainHead.y) - chainHead.y);
+
+      return [dX, dY];
+    }
+
+    function relToAbs(relCoord, dimension) {
+        return (relCoord * (dimension === 0 ? objCanvas.width : objCanvas.height));
+    }
+
+    function randomNumber(lowerNumber, higherNumber) {
+        return Math.floor(Math.random() * higherNumber) + lowerNumber;
+    }
+
+    function uuidv4() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+    }
+
+    function calculateFontSize() {
+      canvasControl.canvasContext.font = (relToAbs(fontSize, 1) * drawScale) + 'px ' + fontStyle;
+    }
+
+    function getPossibleDirections() {
+
+      linkGrowDirectionList = [];
+
+      if ((1 & chainDirections) === 1) {
+        linkGrowDirectionList.push("down");
+      }
+
+      if ((2 & chainDirections) === 2) {
+        linkGrowDirectionList.push("up");
+      }
+
+      if ((4 & chainDirections) === 4) {
+        linkGrowDirectionList.push("left");
+      }
+
+      if ((8 & chainDirections) === 8) {
+        linkGrowDirectionList.push("right");
+      }
+
+      return linkGrowDirectionList;
+    }
+
+    function setupEventHandlers(objCanvas, objCanvasController) {
+      objCanvas.addEventListener('click', function(e) {
+        objCanvasController.mouseEventHandler(e, "Click");
+      });
+      window.addEventListener("keydown", function(e){
+        keyEvents(e, "down");
+      });
+      window.addEventListener("keyup", function(e){
+        keyEvents(e, "up");
+      });
+      window.addEventListener("keypress", function(e){
+        keyEvents(e, "press");
+      });
+    }
+    </script>
+
+  </head>
+  <body onload="init();">
+    <div class="canvasContainer">
+      <canvas id="canvasDraw">Hmmm... Your browser doesn't seem to support HTML 5 Canvas</canvas>
+    </div>
+  </body>
+</html>
